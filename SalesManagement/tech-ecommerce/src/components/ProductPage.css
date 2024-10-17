@@ -1,0 +1,189 @@
+/* General Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f7f9fc;
+}
+
+/* Header Styling */
+h1 {
+  text-align: center;
+  font-size: 2.2em; /* Slightly increased size */
+  margin-top: 20px;
+  color: #333;
+}
+
+/* Super Categories */
+.super-categories {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px; /* Increased margin */
+}
+
+.super-categories button {
+  background-color: #0056b3;
+  color: #fff;
+  padding: 6px 12px; /* Increased padding slightly */
+  margin: 4px; /* Increased margin */
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8em; /* Increased font size */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.super-categories button.active {
+  background-color: #00409c;
+}
+
+/* Subcategories */
+.sub-categories {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px; /* Increased margin */
+}
+
+.sub-categories button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 6px 12px; /* Increased padding slightly */
+  margin: 4px; /* Increased margin */
+  border: none;
+  border-radius: 5px;
+  font-size: 0.8em; /* Increased font size */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.sub-categories button.active {
+  background-color: #0056b3;
+}
+
+/* Product Grid */
+.product-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 15px; /* Increased margin */
+}
+
+/* Product Card Styling */
+.product-card {
+  max-width: 220px; /* Slightly increased max width */
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.1); /* Increased shadow */
+  margin: 15px; /* Increased margin */
+  padding: 12px; /* Increased padding */
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-8px); /* Increased hover effect */
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15); /* Increased shadow */
+}
+
+.product-card img {
+  width: 100%;
+  height: auto;
+  margin-bottom: 8px; /* Increased margin */
+}
+
+.product-card h3 {
+  font-size: 1.3em; /* Increased size */
+  color: #333;
+}
+
+.product-card p {
+  font-size: 1.1em; /* Increased size */
+  color: #666;
+  margin: 8px 0; /* Increased margin */
+}
+
+.product-card button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 18px; /* Increased padding */
+  font-size: 1.1em; /* Slightly increased size */
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-card button:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
+  .super-categories button,
+  .sub-categories button {
+    padding: 8px 16px; /* Adjusted for larger screens */
+    font-size: 0.9em; /* Adjusted for larger screens */
+  }
+
+  .product-card {
+    margin: 20px; /* Adjusted for larger screens */
+  }
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.add-to-cart,
+.reviews-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.9em; /* Adjust font size as needed */
+}
+
+.reviews-button {
+  margin-left: 10px; /* Add some space between buttons */
+}
+
+.reviews-modal {
+  position: fixed; /* Fixed position to overlay on top */
+  z-index: 1000; /* Ensure it appears above other content */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scrolling if needed */
+  background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+}
+
+.modal-content {
+  background-color: #fff; /* White background for the modal */
+  margin: 15% auto; /* Center the modal */
+  padding: 20px;
+  border: 1px solid #888; /* Border for the modal */
+  width: 80%; /* Width of the modal */
+  max-width: 600px; /* Max width */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Optional shadow */
+}
+
+.close {
+  color: #aaa; /* Close button color */
+  float: right; /* Position to the right */
+  font-size: 28px; /* Font size for close button */
+  font-weight: bold; /* Bold font */
+}
+
+.close:hover,
+.close:focus {
+  color: black; /* Change color on hover */
+  text-decoration: none; /* No underline */
+  cursor: pointer; /* Pointer cursor on hover */
+}

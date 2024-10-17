@@ -1,0 +1,37 @@
+/* src/components/LandingPage.css */
+.landing-page {
+    text-align: center;
+    padding: 50px 20px;
+    background: #f9f9f9;
+    min-height: 100vh;
+  }
+  
+  .landing-page h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+  }
+  
+  .landing-page p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+  }
+  
+  .landing-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .landing-btn {
+    padding: 15px 30px;
+    background-color: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    transition: background-color 0.3s;
+  }
+  
+  .landing-btn:hover {
+    background-color: #0056b3;
+  }

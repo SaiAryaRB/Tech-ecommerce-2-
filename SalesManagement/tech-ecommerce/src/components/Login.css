@@ -1,0 +1,78 @@
+/* src/components/Login.css */
+.login-container {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .login-toggle {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  
+  .toggle-button {
+    flex: 1;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-right: 10px; /* Space between buttons */
+  }
+  
+  .toggle-button:last-child {
+    margin-right: 0; /* Remove margin for the last button */
+  }
+  
+  .toggle-button.active {
+    background-color: #0056b3; /* Darker blue for the active button */
+  }
+  
+  .toggle-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  button[type='submit'] {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  button[type='submit']:hover {
+    background-color: #0056b3; /* Darker blue on submit button hover */
+  }
+  
+  .success-message {
+    color: green; /* Set the text color to green */
+    font-weight: bold; /* Make the text bold */
+    margin-top: 10px; /* Add some space above the message */
+  }
+  
