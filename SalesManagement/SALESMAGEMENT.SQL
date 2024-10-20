@@ -471,3 +471,9 @@ END //
 
 -- Restore the delimiter
 DELIMITER ;
+
+--- Creating a View (Products + Carts ) ( To simplify Retrieval )
+CREATE VIEW CartView AS
+SELECT c.CartID, c.CustomerID, p.Product_ID, p.Product_Name, p.Price, c.Quantity
+FROM CART c
+JOIN PRODUCTS p ON c.Product_ID = p.Product_ID;
