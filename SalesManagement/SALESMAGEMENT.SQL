@@ -477,3 +477,71 @@ CREATE VIEW CartView AS
 SELECT c.CartID, c.CustomerID, p.Product_ID, p.Product_Name, p.Price, c.Quantity
 FROM CART c
 JOIN PRODUCTS p ON c.Product_ID = p.Product_ID;
+
+--Stored Procedure For Retrieving Cart Details
+DELIMITER //
+CREATE PROCEDURE GetCustomerCart(IN id INT)
+BEGIN
+    SELECT Product_Name, Product_ID, Quantity, Price, (Quantity * Price) AS Total_Price
+    FROM CartView
+    WHERE CustomerID = id;
+END //
+DELIMITER ;
+
+--StoredProcedure to Update Cart Quantity
+DELIMITER //
+
+CREATE PROCEDURE UpdateCartQuantity(IN p_CustomerID INT, IN p_ProductID INT, IN p_NewQuantity INT)
+BEGIN
+    DECLARE stockLevel INT;
+    DECLARE currentQuantity INT;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Get current quantity in the cart
+    SELECT Quantity INTO currentQuantity
+    FROM CART
+    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+    -- Check if the item exists in the cart
+    IF currentQuantity IS NOT NULL THEN
+        -- Get stock level for the product
+        SELECT Stock_Level INTO stockLevel
+        FROM Inventory
+        WHERE Product_ID = p_ProductID;
+
+        -- Check if there's enough stock to update the cart
+        IF stockLevel + currentQuantity >= p_NewQuantity THEN
+            -- Update quantity in the cart
+            UPDATE CART
+            SET Quantity = p_NewQuantity
+            WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+            -- Adjust stock level in inventory
+            UPDATE Inventory
+            SET Stock_Level = stockLevel - (p_NewQuantity - currentQuantity)
+            WHERE Product_ID = p_ProductID;
+
+            -- Commit transaction
+            COMMIT;
+
+            -- Return success message
+            SELECT 'Success: Cart quantity updated.' AS Message;
+        ELSE
+            -- Rollback transaction if not enough stock
+            ROLLBACK;
+
+            -- Return out of stock message
+            SELECT 'Error: Not enough stock available.' AS Message;
+        END IF;
+    ELSE
+        -- Rollback transaction if item not found in the cart
+        ROLLBACK;
+
+        -- Return error message
+        SELECT 'Error: Item not found in the cart.' AS Message;
+    END IF;
+END //
+
+DELIMITER ;
