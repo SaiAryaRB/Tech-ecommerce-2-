@@ -545,6 +545,47 @@ BEGIN
 END //
 
 DELIMITER ;
+--StoredProcedure(DeletefromCart)
+DELIMITER //
+
+CREATE PROCEDURE DeleteFromCart(IN p_CustomerID INT, IN p_ProductID INT)
+BEGIN
+    DECLARE currentQuantity INT;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Get current quantity in the cart
+    SELECT Quantity INTO currentQuantity
+    FROM CART
+    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+    -- Check if the item exists in the cart
+    IF currentQuantity IS NOT NULL THEN
+        -- Adjust stock level in inventory
+        UPDATE Inventory
+        SET Stock_Level = Stock_Level + currentQuantity
+        WHERE Product_ID = p_ProductID;
+
+        -- Delete item from the cart
+        DELETE FROM CART
+        WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+        -- Commit transaction
+        COMMIT;
+
+        -- Return success message
+        SELECT 'Success: Item removed from the cart.' AS Message;
+    ELSE
+        -- Rollback transaction if item not found in the cart
+        ROLLBACK;
+
+        -- Return error message
+        SELECT 'Error: Item not found in the cart.' AS Message;
+    END IF;
+END //
+
+DELIMITER ;
 
 --MostImportantStoredProcedure(ConfirmingOrder)
 DELIMITER //
