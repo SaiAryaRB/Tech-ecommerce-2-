@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom'; // Import Link for navigation
 import './admin.css';
 import { Line } from 'react-chartjs-2';
 import { FaBoxOpen, FaFileAlt } from 'react-icons/fa';
@@ -13,6 +14,7 @@ const AdminHomePage = () => {
   const [error, setError] = useState(null);
   const adminName = "Admin"; // You can update this with dynamic values later when backend is ready
 
+  // Fetch sales data from backend
   useEffect(() => {
     const fetchSalesData = async () => {
       try {
@@ -74,8 +76,10 @@ const AdminHomePage = () => {
           <h2>Management Options</h2>
           <ul>
             <li>
-              <FaBoxOpen />
-              <span className="option-title">Inventory Management</span>
+              <Link to="/admin/inventory" className="management-option">
+                <FaBoxOpen />
+                <span className="option-title">Inventory Management</span>
+              </Link>
               <ul className="sub-options">
                 <li>Update Stock</li>
                 <li>View Inventory</li>
@@ -84,8 +88,10 @@ const AdminHomePage = () => {
             </li>
 
             <li>
-              <FaFileAlt />
-              <span className="option-title">Report Generation</span>
+              <Link to="/admin/report" className="management-option">
+                <FaFileAlt />
+                <span className="option-title">Report Generation</span>
+              </Link>
               <ul className="sub-options">
                 <li>Generate Sales Report</li>
                 <li>Inventory Report</li>

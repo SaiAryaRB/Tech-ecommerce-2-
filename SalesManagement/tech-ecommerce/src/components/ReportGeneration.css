@@ -1,0 +1,35 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.container {
+  max-width: 1000px;
+  margin-top: 50px;
+}
+
+h1 {
+  color: #333;
+  font-weight: bold;
+}
+
+.report-table {
+  margin-top: 20px;
+}
+
+.btn-primary {
+  width: 200px;
+}
+
+.report-output {
+  margin-top: 30px;
+}
+
+table {
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+}
+
+thead {
+  background-color: #007bff;
+  color: white;
+}
