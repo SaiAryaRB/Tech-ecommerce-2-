@@ -16,6 +16,11 @@ import Navbar from './NavBar';
     const [reviews, setReviews] = useState([]); // To store fetched reviews
     const [averageRating, setAverageRating] = useState(null); // To store average rating
 
+
+  useEffect(() => {
+    const customerId = sessionStorage.getItem('customerId');
+    console.log('Retrieved customerId from sessionStorage:', customerId);
+    }, []); 
   // Fetch all Super Categories
   useEffect(() => {
     const fetchSuperCategories = async () => {

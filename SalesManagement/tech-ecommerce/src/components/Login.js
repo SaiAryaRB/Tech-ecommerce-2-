@@ -51,11 +51,18 @@ const Login = () => {
       setEmail('');
       setPassword('');
 
-      // Redirect based on userType
       if (userType === 'admin') {
         console.log('Redirecting to Admin Dashboard'); // Debugging message for admin redirect
         navigate('/admin/dashboard'); // Redirect to Admin Dashboard
       } else {
+        console.log('Customer login successful'); // Debugging message for customer login
+
+        // Store the Customer_ID in sessionStorage
+        const customerId = response.data.customerId; // Get customerId from API response
+        console.log(`Storing customerId in sessionStorage: ${customerId}`); // Debug log for sessionStorage
+        sessionStorage.setItem('customerId', customerId); // Store customerId
+        console.log(`customerId successfully stored in sessionStorage: ${sessionStorage.getItem('customerId')}`);
+        // Redirect to Products page after login
         console.log('Redirecting to Products Page'); // Debugging message for customer redirect
         navigate('/products'); // Redirect to Products Page
       }

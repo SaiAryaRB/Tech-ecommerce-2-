@@ -13,7 +13,7 @@ exports.login = (req, res) => {
 
   // Query to check customer credentials
   connection.query(
-    'SELECT * FROM Customers WHERE email = ? AND password = ?',
+    'SELECT Customer_ID FROM Customers WHERE email = ? AND password = ?',
     [email, password],
     (err, results) => {
       if (err) {
@@ -24,7 +24,11 @@ exports.login = (req, res) => {
       console.log('Query result:', results); // Debug log
       if (results.length > 0) {
         console.log('Customer login successful'); // Debug log
-        res.status(200).json({ message: 'Customer login successful' });
+        const customerId = results[0].Customer_ID; // Get the Customer_ID from the query result
+        res.status(200).json({ 
+          message: 'Customer login successful', 
+          customerId: customerId // Send Customer_ID back to the frontend
+        });
       } else {
         console.log('Invalid email or password'); // Debug log
         res.status(401).json({ message: 'Invalid email or password' });
