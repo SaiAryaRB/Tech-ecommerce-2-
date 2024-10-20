@@ -545,3 +545,85 @@ BEGIN
 END //
 
 DELIMITER ;
+--StoredProcedure(DeletefromCart)
+DELIMITER //
+
+CREATE PROCEDURE DeleteFromCart(IN p_CustomerID INT, IN p_ProductID INT)
+BEGIN
+    DECLARE currentQuantity INT;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Get current quantity in the cart
+    SELECT Quantity INTO currentQuantity
+    FROM CART
+    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+    -- Check if the item exists in the cart
+    IF currentQuantity IS NOT NULL THEN
+        -- Adjust stock level in inventory
+        UPDATE Inventory
+        SET Stock_Level = Stock_Level + currentQuantity
+        WHERE Product_ID = p_ProductID;
+
+        -- Delete item from the cart
+        DELETE FROM CART
+        WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+        -- Commit transaction
+        COMMIT;
+
+        -- Return success message
+        SELECT 'Success: Item removed from the cart.' AS Message;
+    ELSE
+        -- Rollback transaction if item not found in the cart
+        ROLLBACK;
+
+        -- Return error message
+        SELECT 'Error: Item not found in the cart.' AS Message;
+    END IF;
+END //
+
+DELIMITER ;
+
+--MostImportantStoredProcedure(ConfirmingOrder)
+DELIMITER //
+
+CREATE PROCEDURE ConfirmOrder(
+    IN p_CustomerID INT,
+    IN p_PaymentMethod VARCHAR(255),
+    OUT p_SalesID INT
+)
+BEGIN
+    DECLARE v_SalesAmount DECIMAL(10,2);
+    
+    -- Calculate the total sales amount from the cart
+    SELECT SUM(Price*Quantity) INTO v_SalesAmount
+    FROM CartView
+    WHERE CustomerID = p_CustomerID;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Insert into Sales table
+    INSERT INTO Sales (CustomerID, SalesAmount, PaymentMethod, SalesDate)
+    VALUES (p_CustomerID, v_SalesAmount, p_PaymentMethod, NOW());
+    
+    -- Get the last inserted SalesID
+    SET p_SalesID = LAST_INSERT_ID();
+
+    -- Insert into product_sales table
+    INSERT INTO product_sales (Product_ID, Sales_ID, UnitPrice, Quantity)
+    SELECT Product_ID, p_SalesID, Price, Quantity
+    FROM CartView
+    WHERE CustomerID = p_CustomerID;
+
+    -- Delete entries from CART table
+    DELETE FROM CART WHERE CustomerID = p_CustomerID;
+
+    -- Commit transaction
+    COMMIT;
+END //
+
+DELIMITER ;

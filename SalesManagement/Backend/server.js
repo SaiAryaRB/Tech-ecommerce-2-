@@ -7,7 +7,8 @@ const productRoutes = require('./routes/productRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 
 const customerRoutes = require('./routes/customerRoutes');
-const cartRoutes =require('./routes/cartRoutes')
+const cartRoutes =require('./routes/cartRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const app = express();
 const PORT = 3000;
 
@@ -35,6 +36,8 @@ app.use('/api', reportRoutes);
 app.use('/customer',customerRoutes);
 
 app.use('/api',cartRoutes);
+
+app.use('/order',orderRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

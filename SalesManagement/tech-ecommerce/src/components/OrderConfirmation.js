@@ -1,93 +1,123 @@
-// src/components/OrderConfirmation.js
-import React, { useState } from 'react';
-import './OrderConfirmation.css'; // Add your styles here
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 const OrderConfirmation = () => {
-  const [paymentMethod, setPaymentMethod] = useState('');
-  const [showPopup, setShowPopup] = useState(false);
+    const [cartItems, setCartItems] = useState([]); // To store cart items
+    const [totalPrice, setTotalPrice] = useState(0); // To store total price
+    const [paymentMethod, setPaymentMethod] = useState('Cash'); // To store selected payment method
+    const [orderConfirmed, setOrderConfirmed] = useState(false); // To track order confirmation status
 
-  // Sample order items (you can pass this as props if you prefer)
-  const orderItems = [
-    { id: 1, name: 'Product 1', price: 29.99, quantity: 1 },
-    { id: 2, name: 'Product 2', price: 49.99, quantity: 2 },
-    { id: 3, name: 'Product 3', price: 19.99, quantity: 1 },
-  ];
+    // Fetch cart details function
+    const fetchCartDetails = async () => {
+        const customerId = sessionStorage.getItem('customerId'); // Retrieve customerId from sessionStorage
+        if (!customerId) {
+            console.error('No customer ID found');
+            return;
+        }
 
-  const handleConfirmOrder = () => {
-    if (paymentMethod) {
-      // Trigger the popup
-      setShowPopup(true);
-    } else {
-      alert('Please select a payment method.'); // Alert if no payment method is selected
-    }
-  };
+        try {
+            // Make the API call to fetch cart details
+            const response = await axios.post('http://localhost:3000/api/viewcart', { customerId });
+            const items = response.data; // Expect the same format as in Cart.js
+            console.log('Cart items fetched:', items); // Log the fetched items
+            setCartItems(items); // Set the items in state
+            
+            // Calculate total price
+            const total = items.reduce((sum, item) => sum + parseFloat(item.Total_Price), 0);
+            setTotalPrice(total); // Set total price in state
+        } catch (error) {
+            console.error('Error fetching cart details:', error);
+        }
+    };
 
-  const closePopup = () => {
-    setShowPopup(false);
-    // Optionally, redirect to another page or reset the state here
-  };
+    // Fetch cart details when the component mounts
+    useEffect(() => {
+        fetchCartDetails();
+    }, []); // Empty dependency array to run only once
 
-  // Calculate total price
-  const totalPrice = orderItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    // Handle order confirmation
+    const handleConfirmOrder = async () => {
+        const customerId = sessionStorage.getItem('customerId'); // Retrieve customerId from sessionStorage
 
-  return (
-    <div className="order-confirmation">
-      <h1>Order Confirmation</h1>
-      <h2>Review Your Order</h2>
-      <ul>
-        {orderItems.map(item => (
-          <li key={item.id}>
-            {item.name} - ${item.price.toFixed(2)} x {item.quantity} = ${(item.price * item.quantity).toFixed(2)}
-          </li>
-        ))}
-      </ul>
-      <h2>Total Price: ${totalPrice.toFixed(2)}</h2>
+        if (!customerId) {
+            console.error('No customer ID found for order confirmation');
+            return;
+        }
 
-      <h2>Select Payment Method</h2>
-      <div className="payment-methods">
-        <label>
-          <input 
-            type="radio" 
-            value="Credit Card" 
-            checked={paymentMethod === 'Credit Card'} 
-            onChange={() => setPaymentMethod('Credit Card')} 
-          />
-          Credit Card
-        </label>
-        <label>
-          <input 
-            type="radio" 
-            value="PayPal" 
-            checked={paymentMethod === 'PayPal'} 
-            onChange={() => setPaymentMethod('PayPal')} 
-          />
-          PayPal
-        </label>
-        <label>
-          <input 
-            type="radio" 
-            value="Cash on Delivery" 
-            checked={paymentMethod === 'Cash on Delivery'} 
-            onChange={() => setPaymentMethod('Cash on Delivery')} 
-          />
-          Cash on Delivery
-        </label>
-      </div>
+        try {
+            const response = await axios.post('http://localhost:3000/order/confirm', {
+                customerId,
+                paymentMethod, // Send selected payment method
+            });
+            console.log('Order confirmation response:', response.data);
+            setOrderConfirmed(true); // Update order confirmation status
+        } catch (error) {
+            console.error('Error confirming order:', error);
+        }
+    };
 
-      <button onClick={handleConfirmOrder}>Confirm Order</button>
+    return (
+        <div>
+            <h1>Order Confirmation</h1>
+            <h2>Review Your Order</h2>
+            {cartItems.length === 0 ? (
+                <p>Your cart is empty.</p> // Display a message if the cart is empty
+            ) : (
+                <ul>
+                    {cartItems.map((item) => (
+                        <li key={item.Product_ID}> {/* Use Product_ID as the key */}
+                            {item.Product_Name} - ${parseFloat(item.Price).toFixed(2)} x {item.Quantity} = ${parseFloat(item.Total_Price).toFixed(2)}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <h2>Total Price: ${totalPrice.toFixed(2)}</h2> {/* Display the total price */}
 
-      {/* Popup for Order Confirmation */}
-      {showPopup && (
-        <div className="popup">
-          <div className="popup-content">
-            <h3>Order Placed!</h3>
-            <p>Your order has been successfully placed.</p>
-            <button onClick={closePopup}>Close</button>
-          </div>
+            <h3>Select Payment Method</h3>
+            <div>
+                <label>
+                    <input
+                        type="radio"
+                        value="Cash"
+                        checked={paymentMethod === 'Cash'}
+                        onChange={(e) => setPaymentMethod(e.target.value)} // Update payment method state
+                    />
+                    Cash
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="Credit Card"
+                        checked={paymentMethod === 'Credit Card'}
+                        onChange={(e) => setPaymentMethod(e.target.value)} // Update payment method state
+                    />
+                    Credit Card
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="Debit Card"
+                        checked={paymentMethod === 'Debit Card'}
+                        onChange={(e) => setPaymentMethod(e.target.value)} // Update payment method state
+                    />
+                    Debit Card
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="PayPal"
+                        checked={paymentMethod === 'PayPal'}
+                        onChange={(e) => setPaymentMethod(e.target.value)} // Update payment method state
+                    />
+                    PayPal
+                </label>
+            </div>
+
+            <button onClick={handleConfirmOrder}>Confirm Order</button>
+
+            {orderConfirmed && <p>Your order has been confirmed!</p>} {/* Display confirmation message */}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default OrderConfirmation;
