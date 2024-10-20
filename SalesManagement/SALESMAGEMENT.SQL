@@ -545,3 +545,44 @@ BEGIN
 END //
 
 DELIMITER ;
+
+--MostImportantStoredProcedure(ConfirmingOrder)
+DELIMITER //
+
+CREATE PROCEDURE ConfirmOrder(
+    IN p_CustomerID INT,
+    IN p_PaymentMethod VARCHAR(255),
+    OUT p_SalesID INT
+)
+BEGIN
+    DECLARE v_SalesAmount DECIMAL(10,2);
+    
+    -- Calculate the total sales amount from the cart
+    SELECT SUM(Price*Quantity) INTO v_SalesAmount
+    FROM CartView
+    WHERE CustomerID = p_CustomerID;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Insert into Sales table
+    INSERT INTO Sales (CustomerID, SalesAmount, PaymentMethod, SalesDate)
+    VALUES (p_CustomerID, v_SalesAmount, p_PaymentMethod, NOW());
+    
+    -- Get the last inserted SalesID
+    SET p_SalesID = LAST_INSERT_ID();
+
+    -- Insert into product_sales table
+    INSERT INTO product_sales (Product_ID, Sales_ID, UnitPrice, Quantity)
+    SELECT Product_ID, p_SalesID, Price, Quantity
+    FROM CartView
+    WHERE CustomerID = p_CustomerID;
+
+    -- Delete entries from CART table
+    DELETE FROM CART WHERE CustomerID = p_CustomerID;
+
+    -- Commit transaction
+    COMMIT;
+END //
+
+DELIMITER ;
