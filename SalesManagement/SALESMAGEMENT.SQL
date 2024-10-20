@@ -407,11 +407,11 @@ INSERT INTO Review (CustomerID, ProductID, Rating, ReviewText) VALUES
 (10, 20, 5, 'The LG OLED TV has stunning picture quality!');
 
 
-ALTER TABLE Users
+ALTER TABLE Customers
 ADD COLUMN Password VARCHAR(255) NOT NULL;
 
 
-UPDATE Users
+UPDATE Customers
 SET Password = 'password123';
 
 
@@ -425,3 +425,55 @@ CREATE TABLE Admins (
 INSERT INTO Admins (email, password) 
 VALUES ('admin@example.com', 'adminpasskey123');
 
+CREATE TABLE CART (
+    CartID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    Product_ID INT,
+    Quantity INT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(Customer_ID),
+    FOREIGN KEY (Product_ID) REFERENCES PRODUCTS(Product_ID)
+);
+
+--Stored Procedure for Adding to Cart
+-- Change the delimiter
+DELIMITER //
+
+CREATE PROCEDURE AddToCart(IN p_CustomerID INT, IN p_ProductID INT, IN p_Quantity INT)
+BEGIN
+    DECLARE stockLevel INT;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Check stock level
+    SELECT Stock_Level INTO stockLevel FROM Inventory WHERE Product_ID = p_ProductID;
+
+    IF stockLevel >= p_Quantity THEN
+        -- Add item to cart
+        INSERT INTO CART (CustomerID, Product_ID, Quantity) VALUES (p_CustomerID, p_ProductID, p_Quantity);
+        
+        -- Decrement stock level
+        UPDATE Inventory SET Stock_Level = Stock_Level - p_Quantity WHERE Product_ID = p_ProductID;
+        
+        -- Commit transaction
+        COMMIT;
+
+        -- Return success message
+        SELECT 'Success: Item has been added to the cart.' AS Message;
+    ELSE
+        -- Rollback transaction
+        ROLLBACK;
+
+        -- Return out of stock message
+        SELECT 'Error: Product is out of stock.' AS Message;
+    END IF;
+END //
+
+-- Restore the delimiter
+DELIMITER ;
+
+--- Creating a View (Products + Carts ) ( To simplify Retrieval )
+CREATE VIEW CartView AS
+SELECT c.CartID, c.CustomerID, p.Product_ID, p.Product_Name, p.Price, c.Quantity
+FROM CART c
+JOIN PRODUCTS p ON c.Product_ID = p.Product_ID;

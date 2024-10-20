@@ -1,23 +1,42 @@
 // src/components/Cart.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Cart = () => {
   const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState([]);
+  const [totalPrice, setTotalPrice] = useState(0);
 
-  // Sample cart items
-  const [cartItems] = useState([
-    { id: 1, name: 'Product 1', price: 29.99, quantity: 1 },
-    { id: 2, name: 'Product 2', price: 49.99, quantity: 2 },
-    { id: 3, name: 'Product 3', price: 19.99, quantity: 1 },
-  ]);
+  // Fetch cart details when component mounts
+  useEffect(() => {
+    const fetchCartDetails = async () => {
+      const customerId = sessionStorage.getItem('customerId'); // Retrieve customerId from sessionStorage
+      if (!customerId) {
+        // Handle case where customerId is not found
+        console.error('No customer ID found');
+        return;
+      }
+
+      try {
+        const response = await axios.post('http://localhost:3000/api/viewcart', { customerId }); // Call your backend API
+        const items = response.data; // Assume the response data is the array of cart items
+        setCartItems(items);
+        
+        // Calculate total price
+        const total = items.reduce((sum, item) => sum + parseFloat(item.Total_Price), 0);
+        setTotalPrice(total);
+      } catch (error) {
+        console.error('Error fetching cart details:', error);
+      }
+    };
+
+    fetchCartDetails();
+  }, []);
 
   const handleProceedToOrder = () => {
     navigate('/order-confirmation'); // Redirect to the Order Confirmation page
   };
-
-  // Calculate total price
-  const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
     <div>
@@ -26,9 +45,9 @@ const Cart = () => {
         <p>Your cart is empty.</p>
       ) : (
         <ul>
-          {cartItems.map(item => (
-            <li key={item.id}>
-              {item.name} - ${item.price.toFixed(2)} x {item.quantity}
+          {cartItems.map((item, index) => (
+            <li key={index}>
+              {item.Product_Name} - ${parseFloat(item.Price).toFixed(2)} x {item.Quantity} = ${parseFloat(item.Total_Price).toFixed(2)}
             </li>
           ))}
         </ul>

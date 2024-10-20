@@ -4,17 +4,22 @@ import { FaShoppingCart } from 'react-icons/fa'; // Add shopping cart icon
 import axios from 'axios'; // Import axios for API requests
 import Navbar from './NavBar';
 
+const ProductPage = () => {
+  const [superCategories, setSuperCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [selectedSuperCategory, setSelectedSuperCategory] = useState('');
+  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+  const [showReviews, setShowReviews] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [reviews, setReviews] = useState([]); // To store fetched reviews
+  const [averageRating, setAverageRating] = useState(null); // To store average rating
 
-  const ProductPage = () => {
-    const [superCategories, setSuperCategories] = useState([]);
-    const [subCategories, setSubCategories] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [selectedSuperCategory, setSelectedSuperCategory] = useState('');
-    const [selectedSubCategory, setSelectedSubCategory] = useState('');
-    const [showReviews, setShowReviews] = useState(false);
-    const [currentProduct, setCurrentProduct] = useState(null);
-    const [reviews, setReviews] = useState([]); // To store fetched reviews
-    const [averageRating, setAverageRating] = useState(null); // To store average rating
+  // Retrieve customerId from sessionStorage
+  useEffect(() => {
+    const customerId = sessionStorage.getItem('customerId');
+    console.log('Retrieved customerId from sessionStorage:', customerId);
+  }, []); 
 
   // Fetch all Super Categories
   useEffect(() => {
@@ -68,9 +73,21 @@ import Navbar from './NavBar';
     fetchProducts();
   }, [selectedSubCategory]);
 
-  const addToCart = (productId) => {
-    console.log(`Added product with id ${productId} to cart`);
+  const addToCart = async (productId) => {
+    const customerId = sessionStorage.getItem('customerId'); // Retrieve customerId from sessionStorage
+    console.log(`Adding product with id ${productId} to cart for customerId: ${customerId}`);
+    try {
+      const response = await axios.post('http://localhost:3000/api/cart', {
+        productId,
+        customerId,
+        quantity: 1, // Default quantity to add
+      });
+      console.log('Product added to cart:', response.data);
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    }
   };
+
   const handleShowReviews = async (product) => {
     try {
       const response = await axios.post('http://localhost:3000/products/reviews', { productId: product.Product_ID });
@@ -148,29 +165,29 @@ import Navbar from './NavBar';
           </div>
         ))}
       </div>
-       {/* Reviews Modal */}
-       {showReviews && currentProduct && (
-  <div className="reviews-modal">
-    <div className="modal-content">
-      <span className="close" onClick={handleCloseReviews}>&times;</span>
-      <h2>Reviews for {currentProduct.Product_Name}</h2>
-      <p>Average Rating: {averageRating ? averageRating.toFixed(1) : 'No ratings available'}</p>
-      <ul>
-        {reviews.length > 0 ? (
-          reviews.map((review, index) => (
-            <li key={index}>
-              <p><strong>Rating:</strong> {review.Rating}/5</p>
-              <p><strong>Review:</strong> {review.ReviewText}</p>
-            </li>
-          ))
-        ) : (
-          <p>No reviews available for this product.</p> // Message for no reviews
-        )}
-      </ul>
-    </div>
-  </div>
-)}
 
+      {/* Reviews Modal */}
+      {showReviews && currentProduct && (
+        <div className="reviews-modal">
+          <div className="modal-content">
+            <span className="close" onClick={handleCloseReviews}>&times;</span>
+            <h2>Reviews for {currentProduct.Product_Name}</h2>
+            <p>Average Rating: {averageRating ? averageRating.toFixed(1) : 'No ratings available'}</p>
+            <ul>
+              {reviews.length > 0 ? (
+                reviews.map((review, index) => (
+                  <li key={index}>
+                    <p><strong>Rating:</strong> {review.Rating}/5</p>
+                    <p><strong>Review:</strong> {review.ReviewText}</p>
+                  </li>
+                ))
+              ) : (
+                <p>No reviews available for this product.</p> // Message for no reviews
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

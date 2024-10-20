@@ -1,7 +1,6 @@
 // src/App.js
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import SignUp from './components/SignUp'
@@ -10,6 +9,8 @@ import Cart from './components/Cart'; // Placeholder for future Cart page
 import AdminDashboard from './components/AdminHomePage'; // Admin Dashboard component
 import InventoryManagement from './components/InventoryManagement'; // Inventory Management placeholder
 import ReportGeneration from './components/ReportGeneration'; // Report Generation placeholder
+import CustomerDetails from './components/CustomerDetails'; 
+import OrderConfirmation from './components/OrderConfirmation';
 
 const App = () => {
   // Simulated login function (for testing purposes)
@@ -42,6 +43,9 @@ const App = () => {
 
         {/* Cart Page: Placeholder for future implementation */}
         <Route path="/cart" element={<Cart />} />
+        <Route path='/order-confirmation' element={<OrderConfirmation />} />
+
+        <Route path='/customer-details' element={<CustomerDetails />} />
 
         {/* Admin-Specific Routes: Accessible without restriction for now */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
