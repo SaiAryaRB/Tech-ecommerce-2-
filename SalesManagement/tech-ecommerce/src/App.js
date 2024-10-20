@@ -10,6 +10,7 @@ import AdminDashboard from './components/AdminHomePage'; // Admin Dashboard comp
 import InventoryManagement from './components/InventoryManagement'; // Inventory Management placeholder
 import ReportGeneration from './components/ReportGeneration'; // Report Generation placeholder
 import CustomerDetails from './components/CustomerDetails'; 
+import OrderConfirmation from './components/OrderConfirmation';
 
 const App = () => {
   // Simulated login function (for testing purposes)
@@ -42,6 +43,7 @@ const App = () => {
 
         {/* Cart Page: Placeholder for future implementation */}
         <Route path="/cart" element={<Cart />} />
+        <Route path='/order-confirmation' element={<OrderConfirmation />} />
 
         <Route path='/customer-details' element={<CustomerDetails />} />
 
