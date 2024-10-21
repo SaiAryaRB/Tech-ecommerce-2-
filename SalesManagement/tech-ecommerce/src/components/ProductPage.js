@@ -15,11 +15,15 @@ const ProductPage = () => {
   const [reviews, setReviews] = useState([]); // To store fetched reviews
   const [averageRating, setAverageRating] = useState(null); // To store average rating
 
+  const [showAddReview, setShowAddReview] = useState(false); // Show Add Review form
+  const [rating, setRating] = useState(1); // Default rating
+  const [reviewText, setReviewText] = useState(''); // Default review text
+
   // Retrieve customerId from sessionStorage
   useEffect(() => {
     const customerId = sessionStorage.getItem('customerId');
     console.log('Retrieved customerId from sessionStorage:', customerId);
-  }, []); 
+  }, []);
 
   // Fetch all Super Categories
   useEffect(() => {
@@ -113,6 +117,39 @@ const ProductPage = () => {
     setAverageRating(null); // Clear average rating
   };
 
+  // Function to submit a review
+  const handleAddReview = async () => {
+    const customerId = sessionStorage.getItem('customerId');
+    if (!customerId) {
+      console.error('No customerId found in sessionStorage');
+      return;
+    }
+      // Logging to check the values before sending them to the backend
+  console.log('Submitting review with:', {
+    customerId,
+    productId: currentProduct.Product_ID,
+    rating, // This should not be undefined
+    reviewText
+  });
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/addreview', {
+        customerId,
+        productId: currentProduct.Product_ID,
+        reviewRating : rating,
+        reviewText
+      });
+
+      console.log('Review submitted:', response.data);
+      setShowAddReview(false); // Close review form after submission
+      setRating(1); // Reset rating
+      setReviewText(''); // Reset review text
+      // Optionally, fetch updated reviews after submission
+    } catch (error) {
+      console.error('Error submitting review:', error);
+    }
+  };
+
   return (
     <div className="product-page">
       <Navbar />
@@ -161,6 +198,12 @@ const ProductPage = () => {
               <button className="reviews-button" onClick={() => handleShowReviews(product)}>
                 Reviews
               </button>
+              <button className="add-review-button" onClick={() => {
+                setCurrentProduct(product);
+                setShowAddReview(true);
+              }}>
+                Add Review
+              </button>
             </div>
           </div>
         ))}
@@ -188,6 +231,35 @@ const ProductPage = () => {
           </div>
         </div>
       )}
+
+{showAddReview && currentProduct && (
+  <div className="add-review-modal">
+    <div className="modal-content">
+      <h2>Add Review for {currentProduct.Product_Name}</h2>
+      
+      <label>Rating:</label>
+      <div className="rating-buttons">
+        {[1, 2, 3, 4, 5].map((num) => (
+          <button
+            key={num}
+            className={`rating-button ${rating === num ? 'selected' : ''}`}
+            onClick={() => setRating(num)} // Set the selected rating
+          >
+            {num}
+          </button>
+        ))}
+      </div>
+
+      <label>Review:</label>
+      <textarea
+        value={reviewText}
+        onChange={(e) => setReviewText(e.target.value)} // Capture review text
+      />
+      <button onClick={handleAddReview}>Submit Review</button>
+      <button onClick={() => setShowAddReview(false)}>Cancel</button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

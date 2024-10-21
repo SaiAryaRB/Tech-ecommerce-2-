@@ -1,0 +1,10 @@
+const express = require('express');
+const router = express.Router();
+const signupController = require('../controllers/signupController'); // Import the customer controller
+
+// POST /signup route for customer signup
+router.post('/signup', signupController.signup);
+
+// You can add more customer routes here as needed
+
+module.exports = router; // Export the router

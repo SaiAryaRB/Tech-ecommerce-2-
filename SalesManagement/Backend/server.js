@@ -9,6 +9,8 @@ const inventoryRoutes = require('./routes/inventoryRoutes'); // Adjust the path 
 const customerRoutes = require('./routes/customerRoutes');
 const cartRoutes =require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const signupRoutes = require('./routes/signupRoutes');
 const app = express();
 const PORT = 3000;
 
@@ -26,7 +28,7 @@ app.use((req, res, next) => {
 
 // Use the auth routes
 app.use('/auth', authRoutes);
-
+app.use('/auth',signupRoutes);
 // Use the sales routes for fetching sales data
 app.use('/api', salesRoutes);  // Add this line to use the sales routes
 
@@ -39,6 +41,8 @@ app.use('/api',cartRoutes);
 // Use the inventory routes
 app.use('/api/inventory', inventoryRoutes);
 app.use('/order',orderRoutes);
+
+app.use('/api',reviewRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

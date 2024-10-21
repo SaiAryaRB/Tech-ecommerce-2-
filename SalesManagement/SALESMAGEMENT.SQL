@@ -656,3 +656,79 @@ INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (18, 100); -- Razer Gamin
 
 INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (19, 100); -- Bose QuietComfort 35
 INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (20, 100); -- Sony WH-1000XM4
+--Stored Procedure For Sign Up
+DELIMITER //
+
+CREATE PROCEDURE SignUp(
+    IN p_FirstName VARCHAR(255),
+    IN p_LastName VARCHAR(255),
+    IN p_Email VARCHAR(255),
+    IN p_House_Number VARCHAR(50),
+    IN p_Street_Name VARCHAR(255),
+    IN p_Pincode VARCHAR(10),
+    IN p_City VARCHAR(255),
+    IN p_Password VARCHAR(255),
+    IN p_PhoneNumbers TEXT  -- This should be a comma-separated list of phone numbers
+)
+BEGIN
+    DECLARE new_Customer_ID INT;
+    DECLARE phone_number VARCHAR(15);
+    
+    -- Declare the cursor for splitting phone numbers
+    DECLARE phone_numbers_cursor CURSOR FOR
+        SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_PhoneNumbers, ',', numbers.n), ',', -1)) 
+        FROM (
+            SELECT 1 AS n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+        ) numbers
+        WHERE CHAR_LENGTH(p_PhoneNumbers) - CHAR_LENGTH(REPLACE(p_PhoneNumbers, ',', '')) >= numbers.n - 1;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET phone_number = NULL;
+
+    -- Insert into the Customer table
+    INSERT INTO Customers (FirstName, LastName, Email, CreatedDate, House_Number, Street_Name, Pincode, City, Password)
+    VALUES (p_FirstName, p_LastName, p_Email, NOW(), p_House_Number, p_Street_Name, p_Pincode, p_City, p_Password);
+    
+    -- Get the last inserted Customer_ID
+    SET new_Customer_ID = LAST_INSERT_ID();
+
+    -- Insert phone numbers into the Phone table
+    IF p_PhoneNumbers IS NOT NULL THEN
+        OPEN phone_numbers_cursor;
+
+        read_loop: LOOP
+            FETCH phone_numbers_cursor INTO phone_number;
+            IF phone_number IS NULL THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO CUSTOMER_PHONE (Customer_ID, Phone_Number)
+            VALUES (new_Customer_ID, phone_number);
+        END LOOP;
+
+        CLOSE phone_numbers_cursor;
+    END IF;
+
+END //
+
+DELIMITER ;
+
+--Stored procedure for Adding Reviews
+DELIMITER //
+
+CREATE PROCEDURE AddReview(
+    IN p_CustomerID INT,
+    IN p_ProductID INT,
+    IN p_Rating INT,
+    IN p_ReviewText TEXT
+)
+BEGIN
+    -- Insert the new review into the REVIEW table
+    INSERT INTO REVIEW (CustomerID, ProductID, Rating, ReviewText)
+    VALUES (p_CustomerID, p_ProductID, p_Rating, p_ReviewText);
+
+    -- Return success message
+    SELECT 'Success: Review added.' AS Message;
+END //
+
+DELIMITER ;
