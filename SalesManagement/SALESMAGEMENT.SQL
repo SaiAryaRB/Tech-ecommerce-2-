@@ -627,3 +627,32 @@ BEGIN
 END //
 
 DELIMITER ;
+
+-- Insert inventory entries with a default stock level of 100 for each product
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (1, 100);  -- Apple iPhone
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (2, 100);  -- Samsung Galaxy
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (3, 100);  -- Google Pixel
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (4, 100);  -- Apple MacBook
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (5, 100);  -- Dell XPS
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (6, 100);  -- HP Spectre
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (7, 100);  -- Lenovo ThinkPad
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (8, 100);  -- HP Omen
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (9, 100);  -- Dell Inspiron
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (10, 100); -- Apple iPad
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (11, 100); -- Samsung Galaxy Tab
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (12, 100); -- Microsoft Surface Pro
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (13, 100); -- Sony PlayStation
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (14, 100); -- Microsoft Xbox
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (15, 100); -- Nintendo Switch
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (16, 100); -- Alienware Gaming PC
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (17, 100); -- HP Omen Gaming PC
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (18, 100); -- Razer Gaming PC
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (19, 100); -- Bose QuietComfort 35
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (20, 100); -- Sony WH-1000XM4

@@ -5,7 +5,7 @@ const authRoutes = require('./routes/authRoutes');
 const salesRoutes = require('./routes/salesRoutes');
 const productRoutes = require('./routes/productRoutes'); 
 const reportRoutes = require('./routes/reportRoutes');
-
+const inventoryRoutes = require('./routes/inventoryRoutes'); // Adjust the path accordingly
 const customerRoutes = require('./routes/customerRoutes');
 const cartRoutes =require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -36,7 +36,8 @@ app.use('/api', reportRoutes);
 app.use('/customer',customerRoutes);
 
 app.use('/api',cartRoutes);
-
+// Use the inventory routes
+app.use('/api/inventory', inventoryRoutes);
 app.use('/order',orderRoutes);
 
 app.listen(PORT, () => {
