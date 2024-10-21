@@ -187,3 +187,21 @@ h1 {
   text-decoration: none; /* No underline */
   cursor: pointer; /* Pointer cursor on hover */
 }
+
+.rating-buttons {
+  display: flex;
+  gap: 5px; /* Adjust spacing as needed */
+}
+
+.rating-button {
+  padding: 10px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.rating-button.selected {
+  background-color: #007bff; /* Change to your desired color */
+  color: white;
+}
