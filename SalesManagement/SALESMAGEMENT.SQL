@@ -732,3 +732,292 @@ BEGIN
 END //
 
 DELIMITER ;
+
+UPDATE SALES
+SET SalesDate = DATE_ADD(SalesDate, INTERVAL 1 YEAR)
+WHERE YEAR(SalesDate) = 2023;
+--CUSTOMERSALESOVERVIEW
+CREATE VIEW CustomerSalesOverview AS
+SELECT 
+    C.Customer_ID,
+    C.FirstName,
+    C.LastName,
+    C.Email,
+    C.House_Number,
+    C.Street_Name,
+    C.City,
+    C.Pincode,
+    COUNT(S.SalesID) AS NumberOfSales,
+    SUM(S.SalesAmount) AS TotalSpent,
+    MAX(S.SalesDate) AS LastPurchaseDate
+FROM 
+    CUSTOMERS C
+LEFT JOIN 
+    SALES S ON C.Customer_ID = S.CustomerID
+GROUP BY 
+    C.Customer_ID;
+
+
+--Stored Procedure for Customer Report Generation
+DELIMITER $$
+
+CREATE PROCEDURE GenerateCustomerReport(
+    IN reportType VARCHAR(50)  -- Removed customer_ID parameter as it's no longer needed
+)
+BEGIN
+    CASE reportType
+        -- Customer Demographic Report
+        WHEN 'CustomerDemographic' THEN
+            SELECT City, COUNT(Customer_ID) AS NumberOfCustomers
+            FROM CustomerSalesOverview
+            GROUP BY City
+            ORDER BY NumberOfCustomers DESC
+            LIMIT 10;
+
+        -- Top Customers by Amount
+        WHEN 'TopCustomersByAmount' THEN
+            SELECT FirstName, LastName, Email, TotalSpent
+            FROM CustomerSalesOverview
+            ORDER BY TotalSpent DESC
+            LIMIT 10;
+
+        -- Frequent Customers by Sales
+        WHEN 'FrequentCustomers' THEN
+            SELECT FirstName, LastName, Email, NumberOfSales
+            FROM CustomerSalesOverview
+            ORDER BY NumberOfSales DESC
+            LIMIT 10;
+
+        -- All Customers Report
+        WHEN 'AllCustomers' THEN
+            SELECT FirstName, LastName, Email, House_Number, Street_Name , City , Pincode
+            FROM CustomerSalesOverview;
+
+        -- Inactive Customers Report
+        WHEN 'InactiveCustomers' THEN
+            SELECT FirstName,LastName,Email
+            FROM CustomerSalesOverview
+            WHERE LastPurchaseDate < DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH) 
+             OR LastPurchaseDate IS NULL;
+
+        ELSE
+            SELECT 'Invalid report type.' AS ErrorMessage;
+    END CASE;
+END $$
+
+DELIMITER ;
+
+
+--StoredProcedure For Product Report Generation
+DELIMITER $$
+
+CREATE PROCEDURE GetProductReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+    CASE reportType
+        -- All Products (Ignore Date)
+        WHEN 'AllProducts' THEN
+            SELECT p.Product_ID, p.Product_Name, p.Price
+            FROM PRODUCTS p;
+
+        -- Top Selling Products (With Date Filter)
+        WHEN 'TopSelling' THEN
+            SELECT p.Product_ID, p.Product_Name, SUM(ps.Quantity) AS TotalSold
+            FROM PRODUCTS p
+            JOIN PRODUCT_SALES ps ON p.Product_ID = ps.Product_ID
+            WHERE ps.Sales_ID IN (SELECT SalesID FROM SALES WHERE SalesDate BETWEEN startDate AND endDate)
+            GROUP BY p.Product_ID
+            ORDER BY TotalSold DESC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        -- Worst Selling Products (With Date Filter)
+        WHEN 'WorstSelling' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(SUM(ps.Quantity), 0) AS TotalSold
+            FROM PRODUCTS p
+            LEFT JOIN PRODUCT_SALES ps ON p.Product_ID = ps.Product_ID
+            LEFT JOIN SALES s ON ps.Sales_ID = s.SalesID AND s.SalesDate BETWEEN startDate AND endDate
+            GROUP BY p.Product_ID
+            ORDER BY TotalSold ASC
+            LIMIT 10;
+
+        -- Products with Best Reviews (Ignore Date)
+        WHEN 'BestReviews' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(AVG(r.Rating), 0) AS AverageRating
+            FROM PRODUCTS p
+            JOIN REVIEW r ON p.Product_ID = r.ProductID
+            GROUP BY p.Product_ID
+            ORDER BY AverageRating DESC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        -- Products with Worst Reviews (Ignore Date)
+        WHEN 'WorstReviews' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(AVG(r.Rating), 0) AS AverageRating
+            FROM PRODUCTS p
+            JOIN REVIEW r ON p.Product_ID = r.ProductID
+            GROUP BY p.Product_ID
+            ORDER BY AverageRating ASC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        ELSE
+            SELECT 'Invalid report type' AS ErrorMessage;
+    END CASE;
+END $$
+
+DELIMITER ;
+--Trigger For Deleting Sales
+DELIMITER //
+
+CREATE TRIGGER delete_related_product_sales
+AFTER DELETE ON Sales
+FOR EACH ROW
+BEGIN
+    DELETE FROM Product_Sales WHERE sales_id = OLD.salesid;
+END //
+
+DELIMITER ;
+
+--View For CategoryReports
+CREATE VIEW ProductSalesWithCategories AS
+SELECT
+    s.SalesID,
+    s.CustomerID,
+    s.SalesAmount,
+    s.SalesDate,
+    ps.Product_ID,
+    ps.Quantity,
+    ps.UnitPrice,
+    (ps.Quantity * ps.UnitPrice) AS TotalSaleAmount,
+    c.Category_Name AS SubCategory,
+    c.Super_Category AS MainCategory
+FROM
+    SALES s
+JOIN
+    PRODUCT_SALES ps ON s.SalesID = ps.Sales_ID
+JOIN
+    PRODUCTS p ON ps.Product_ID = p.Product_ID
+JOIN
+    PRODUCT_CATEGORY pc ON p.Product_ID = pc.Product_ID
+JOIN
+    CATEGORY c ON pc.Category_ID = c.Category_ID;
+
+
+--StoredProcedure For Categories
+DELIMITER //
+
+CREATE PROCEDURE GetCategoryReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+
+    -- Query for All Categories
+    IF reportType = 'AllCategories' THEN
+        SELECT DISTINCT 
+            c.Super_Category AS Category
+        FROM 
+            CATEGORY c;
+
+    -- Query for All Subcategories
+    ELSEIF reportType = 'AllSubcategories' THEN
+        SELECT 
+            c.Category_Name AS SubCategory
+        FROM 
+            CATEGORY c;
+
+    -- Query for Top-Selling Categories (Main Categories) with date filtering
+    ELSEIF reportType = 'TopSellingCategories' THEN
+        SELECT
+            MainCategory,
+            SUM(TotalSaleAmount) AS TotalSales
+        FROM
+            ProductSalesWithCategories
+        WHERE
+            SalesDate BETWEEN startDate AND endDate
+        GROUP BY
+            MainCategory
+        ORDER BY
+            TotalSales DESC
+        LIMIT 10;  -- Adjust limit as needed
+
+    -- Query for Top-Selling Subcategories with date filtering
+    ELSEIF reportType = 'TopSellingSubcategories' THEN
+        SELECT
+            SubCategory AS CATEGORY,
+            SUM(TotalSaleAmount) AS TotalSales
+        FROM
+            ProductSalesWithCategories
+        WHERE
+            SalesDate BETWEEN startDate AND endDate
+        GROUP BY
+            MainCategory, SubCategory
+        ORDER BY
+            TotalSales DESC
+        LIMIT 10;  -- Adjust limit as needed
+
+    ELSE
+        SELECT 'Invalid report type' AS ErrorMessage;
+    END IF;
+END //
+
+DELIMITER ;
+
+--StoredProcedure for SalesReportGeneration
+DELIMITER //
+
+CREATE PROCEDURE GetSalesReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+    IF reportType = 'AllSales' THEN
+        SELECT *
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND endDate;
+
+    ELSEIF reportType = 'DemographicSales' THEN
+        SELECT
+            c.City,
+            COUNT(s.SalesID) AS NumberOfSales,
+            SUM(s.SalesAmount) AS TotalSalesAmount
+        FROM Sales s
+        JOIN Customers c ON s.CustomerID = c.Customer_ID
+        WHERE s.SalesDate BETWEEN startDate AND endDate
+        GROUP BY c.City
+        ORDER BY NumberOfSales DESC;
+
+    ELSEIF reportType = 'BestSales' THEN
+        SELECT *
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND endDate
+        ORDER BY SalesAmount DESC
+        LIMIT 10;
+
+    ELSEIF reportType = 'SalesByPaymentMethod' THEN
+        SELECT
+            PaymentMethod,
+            COUNT(SalesID) AS NumberOfSales,
+            SUM(SalesAmount) AS TotalSalesAmount
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND endDate
+        GROUP BY PaymentMethod;
+
+    ELSEIF reportType = 'SalesSummary' THEN
+        SELECT
+            COUNT(SalesID) AS TotalTransactions,
+            SUM(SalesAmount) AS TotalSalesAmount,
+            AVG(SalesAmount) AS AverageAmountPerTransaction
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND endDate;
+
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Invalid report type specified.';
+    END IF;
+END //
+
+DELIMITER ;

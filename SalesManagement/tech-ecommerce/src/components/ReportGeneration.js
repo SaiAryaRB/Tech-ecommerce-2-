@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import './ReportGeneration.css';  // Include your custom CSS file
 import 'bootstrap/dist/css/bootstrap.min.css';  // Use Bootstrap for styling
-import { Table } from 'react-bootstrap';
-
+import { Table, Dropdown } from 'react-bootstrap';
 const ReportGeneration = () => {
   const [reportData, setReportData] = useState([]);
   const [reportType, setReportType] = useState('');
@@ -12,8 +11,41 @@ const ReportGeneration = () => {
   const generateReport = async (type) => {
     setReportType(type);
     try {
-      const response = await fetch(`http://localhost:3000/api/reports/${type}?start=${startDate}&end=${endDate}`);
+      let url = '';
+
+      // Check for specific report types (Customer or Product)
+      if (
+        type === 'CustomerDemographic' ||
+        type === 'TopCustomersByAmount' ||
+        type === 'FrequentCustomers' ||
+        type === 'AllCustomers' ||
+        type === 'InactiveCustomers'
+      ) {
+        url = `http://localhost:3000/api/reports/customer/${type}`;
+      } else if (
+        type === 'AllProducts' ||
+        type === 'TopSelling' ||
+        type === 'WorstSelling' ||
+        type === 'BestReviews' ||
+        type === 'WorstReviews'
+      ) {
+        url = `http://localhost:3000/api/reports/product/${type}?startDate=${startDate}&endDate=${endDate}`;
+      } else if (
+        type === 'AllCategories' ||
+        type === 'AllSubcategories' ||
+        type === 'TopSellingCategories' ||
+        type === 'TopSellingSubcategories'
+      ) {
+        // Category report URLs
+        url = `http://localhost:3000/api/reports/category/${type}?startDate=${startDate}&endDate=${endDate}`;
+      } else {
+        url = `http://localhost:3000/api/reports/sales/${type}?startDate=${startDate}&endDate=${endDate}`;
+      }
+
+      console.log("Querying report with URL:", url);
+      const response = await fetch(url);
       const data = await response.json();
+      console.log("Response Data:", data);
       setReportData(data);
     } catch (error) {
       console.error('Error generating report:', error);
@@ -21,7 +53,7 @@ const ReportGeneration = () => {
   };
 
   const exportToCSV = () => {
-    // Implement CSV export functionality
+    
   };
 
   const exportToPDF = () => {
@@ -53,21 +85,99 @@ const ReportGeneration = () => {
       </div>
 
       <div className="d-flex justify-content-center my-4">
-        <button className="btn btn-primary mx-2" onClick={() => generateReport('customer')}>
-          Generate Customer Report
-        </button>
-        <button className="btn btn-primary mx-2" onClick={() => generateReport('item')}>
-          Generate Item Report
-        </button>
-        <button className="btn btn-primary mx-2" onClick={() => generateReport('category')}>
-          Generate Category Report
-        </button>
-        <button className="btn btn-primary mx-2" onClick={() => generateReport('sales')}>
-          Generate Sales Report
-        </button>
-        <button className="btn btn-primary mx-2" onClick={() => generateReport('topCustomers')}>
-          Generate Top Customers Report
-        </button>
+        <Dropdown className="mx-2">
+          <Dropdown.Toggle variant="primary" id="dropdown-basic">
+            Generate Customer Report
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => generateReport('CustomerDemographic')}>
+              Customer Demographics
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('TopCustomersByAmount')}>
+              Top Customers by Amount
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('FrequentCustomers')}>
+              Frequent Customers
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('AllCustomers')}>
+              All Customers
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('InactiveCustomers')}>
+              Inactive Customers
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+
+        <Dropdown className="mx-2">
+          <Dropdown.Toggle variant="primary" id="dropdown-basic">
+            Generate Item Report
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => generateReport('AllProducts')}>
+              All Products
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('TopSelling')}>
+              Top Selling Products
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('WorstSelling')}>
+              Worst Selling Products
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('BestReviews')}>
+              Top Reviewed Products
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('WorstReviews')}>
+              Worst Reviewed Products
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+
+        {/* New Dropdown for Category Reports */}
+        <Dropdown className="mx-2">
+          <Dropdown.Toggle variant="primary" id="category-dropdown">
+            Generate Category Report
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => generateReport('AllCategories')}>
+              All Categories
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('AllSubcategories')}>
+              All Subcategories
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('TopSellingCategories')}>
+              Top Selling Categories
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('TopSellingSubcategories')}>
+              Top Selling Subcategories
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+        <Dropdown className="mx-2">
+          <Dropdown.Toggle variant="primary" id="category-dropdown">
+            Generate Sales Report
+          </Dropdown.Toggle>
+
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={() => generateReport('AllSales')}>
+              All Sales
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('BestSales')}>
+              Best Sales
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('DemographicSales')}>
+              Demographic Sales
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('SalesByPaymentMethod')}>
+              Sales By Payment Methods
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('SalesSummary')}>
+              Sales Summary 
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+
       </div>
 
       <div className="report-output">
