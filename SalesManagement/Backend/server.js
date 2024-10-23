@@ -11,6 +11,8 @@ const cartRoutes =require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const signupRoutes = require('./routes/signupRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
+
 const app = express();
 const PORT = 3000;
 
@@ -20,11 +22,14 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
+app.use(express.json());
 
 app.use((req, res, next) => {
   console.log(`${req.method} request for ${req.url}`); // Log each incoming request
   next(); // Proceed to the next middleware or route
 });
+
+
 
 // Use the auth routes
 app.use('/auth', authRoutes);
@@ -33,7 +38,8 @@ app.use('/auth',signupRoutes);
 app.use('/api', salesRoutes);  // Add this line to use the sales routes
 
 app.use('/products', productRoutes);
-
+// Use category routes
+app.use('/api/categories', categoryRoutes);
 app.use('/api', reportRoutes);
 app.use('/customer',customerRoutes);
 

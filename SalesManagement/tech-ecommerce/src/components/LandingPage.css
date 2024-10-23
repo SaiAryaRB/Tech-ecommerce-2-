@@ -1,37 +1,32 @@
 /* src/components/LandingPage.css */
 .landing-page {
-    text-align: center;
-    padding: 50px 20px;
-    background: #f9f9f9;
-    min-height: 100vh;
-  }
-  
-  .landing-page h1 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
-  }
-  
-  .landing-page p {
-    font-size: 1.2rem;
-    margin-bottom: 40px;
-  }
-  
-  .landing-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-  }
-  
-  .landing-btn {
-    padding: 15px 30px;
-    background-color: #007bff;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    font-size: 1.2rem;
-    transition: background-color 0.3s;
-  }
-  
-  .landing-btn:hover {
-    background-color: #0056b3;
-  }
+  position: relative; /* Enables positioning of the buttons */
+  min-height: 100vh;
+  background: url('D:\H\GitHub\Tech-ecommerce\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
+  background-size: cover; /* Ensure the image covers the entire area */
+  background-attachment: fixed; /* Optional: creates a parallax effect */
+  filter: blur(0);
+}
+
+.landing-buttons {
+  position: absolute; /* Position buttons absolutely within the container */
+  bottom: 23%; /* Distance from the bottom */
+  right: 14.5%; /* Distance from the right */
+  display: flex;
+  flex-direction: row; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+}
+
+.landing-btn {
+  padding: 12px 30px;
+  background-color: #421e78;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 1.2rem;
+  transition: background-color 0.3s;
+}
+
+.landing-btn:hover {
+  background-color: #541253;
+}

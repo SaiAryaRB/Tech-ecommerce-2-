@@ -732,3 +732,92 @@ BEGIN
 END //
 
 DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE AddProductAndInventory(
+    IN p_Product_Name VARCHAR(255),
+    IN p_Quantity INT,
+    IN p_Price DECIMAL(10, 2)
+)
+BEGIN
+    DECLARE last_id INT;
+
+    -- Insert into Products table
+    INSERT INTO Products (Product_Name, Price) VALUES (p_Product_Name, p_Price);
+    
+    -- Get the last inserted Product_ID
+    SET last_id = LAST_INSERT_ID();
+
+    -- Insert into Inventory table
+    INSERT INTO Inventory (Product_ID, Stock_Level, DateChanged) VALUES (last_id, p_Quantity, NOW());
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE UpdateProductInventory(
+    IN p_Product_ID INT,
+    IN p_New_Quantity INT,
+    IN p_New_Product_Name VARCHAR(255),
+    IN p_New_Price DECIMAL(10, 2)
+)
+BEGIN
+    -- Update the Inventory table
+    UPDATE Inventory 
+    SET Stock_Level = p_New_Quantity, DateChanged = NOW()
+    WHERE Product_ID = p_Product_ID;
+
+    -- Update the Products table
+    UPDATE Products 
+    SET Product_Name = p_New_Product_Name, Price = p_New_Price
+    WHERE Product_ID = p_Product_ID;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE AddProductWithCategory(
+    IN p_Product_Name VARCHAR(255),
+    IN p_Quantity INT,
+    IN p_Price DECIMAL(10, 2),
+    IN p_Super_Category VARCHAR(255),
+    IN p_Category_Name VARCHAR(255)
+)
+BEGIN
+    DECLARE last_id INT;
+    DECLARE category_id INT;
+
+    -- Insert into Products table
+    INSERT INTO Products (Product_Name, Price) VALUES (p_Product_Name, p_Price);
+    -- Get the last inserted Product_ID
+    SET last_id = LAST_INSERT_ID();
+
+    -- Debugging outputs for parameters
+    SELECT TRIM(p_Super_Category) AS DebugSuperCategory, 
+           TRIM(p_Category_Name) AS DebugCategoryName;
+
+    -- Retrieve the Category_ID based on Super_Category and Category_Name	
+    SELECT Category_ID INTO category_id
+    FROM Category
+    WHERE TRIM(Super_Category) LIKE TRIM(p_Super_Category) 
+      AND TRIM(Category_Name) LIKE TRIM(p_Category_Name);
+
+    -- Debug output for Category_ID
+    SELECT category_id AS DebugCategoryID;  -- Output the category_id
+
+    -- If category is found, insert into PRODUCT_CATEGORY table
+    IF category_id IS NOT NULL THEN
+        INSERT INTO PRODUCT_CATEGORY (Product_ID, Category_ID) VALUES (last_id, category_id);
+    ELSE
+        -- Handle the case where category is not found
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found';
+    END IF;
+
+    -- Insert into Inventory table
+    INSERT INTO Inventory (Product_ID, Stock_Level, DateChanged) VALUES (last_id, p_Quantity, NOW());
+END //
+
+DELIMITER ;
