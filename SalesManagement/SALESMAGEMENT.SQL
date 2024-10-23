@@ -788,7 +788,7 @@ CREATE PROCEDURE AddProductWithCategory(
 )
 BEGIN
     DECLARE last_id INT;
-    DECLARE category_id INT;
+    DECLARE cat_id INT;
 
     -- Insert into Products table
     INSERT INTO Products (Product_Name, Price) VALUES (p_Product_Name, p_Price);
@@ -800,17 +800,17 @@ BEGIN
            TRIM(p_Category_Name) AS DebugCategoryName;
 
     -- Retrieve the Category_ID based on Super_Category and Category_Name	
-    SELECT Category_ID INTO category_id
+    SELECT Category_ID INTO cat_id
     FROM Category
-    WHERE TRIM(Super_Category) LIKE TRIM(p_Super_Category) 
-      AND TRIM(Category_Name) LIKE TRIM(p_Category_Name);
-
+    WHERE Super_Category = p_Super_Category 
+      AND Category_Name = p_Category_Name;
+ 
     -- Debug output for Category_ID
-    SELECT category_id AS DebugCategoryID;  -- Output the category_id
+    SELECT cat_id AS DebugCategoryID;  -- Output the category_id
 
     -- If category is found, insert into PRODUCT_CATEGORY table
-    IF category_id IS NOT NULL THEN
-        INSERT INTO PRODUCT_CATEGORY (Product_ID, Category_ID) VALUES (last_id, category_id);
+    IF cat_id IS NOT NULL THEN
+        INSERT INTO PRODUCT_CATEGORY (Product_ID, Category_ID) VALUES (last_id, cat_id);
     ELSE
         -- Handle the case where category is not found
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found';
