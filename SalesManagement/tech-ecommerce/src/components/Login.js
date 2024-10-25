@@ -51,6 +51,10 @@ const Login = () => {
       setEmail('');
       setPassword('');
 
+      // Store user role in localStorage
+      sessionStorage.setItem('role', userType);
+      console.log(`role successfully stored in sessionStorage: ${sessionStorage.getItem('role')}`); // Store user role (admin or customer)
+
       if (userType === 'admin') {
         console.log('Redirecting to Admin Dashboard'); // Debugging message for admin redirect
         navigate('/admin/dashboard'); // Redirect to Admin Dashboard

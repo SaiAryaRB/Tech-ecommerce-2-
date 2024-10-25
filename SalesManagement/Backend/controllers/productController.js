@@ -48,12 +48,12 @@ exports.products = (req, res) => {
             SELECT p.* FROM PRODUCTS p
             JOIN PRODUCT_CATEGORY pc ON p.Product_ID = pc.Product_ID
             WHERE pc.Category_ID = ?`;
-
         db.query(productQuery, [categoryId], (err, results) => {
             if (err) {
                 return res.status(500).json({ error: 'Database error' });
             }
-            res.json(results); // Respond with the products
+            res.json(results);
+            console.log(results) ; // Respond with the products
         });
     });
 }; 

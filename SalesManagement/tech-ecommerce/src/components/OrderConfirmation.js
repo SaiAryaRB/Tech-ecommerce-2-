@@ -6,6 +6,7 @@ const OrderConfirmation = () => {
     const [totalPrice, setTotalPrice] = useState(0); // To store total price
     const [paymentMethod, setPaymentMethod] = useState('Cash'); // To store selected payment method
     const [orderConfirmed, setOrderConfirmed] = useState(false); // To track order confirmation status
+    const [confirmationMessage, setConfirmationMessage] = useState('');
 
     // Fetch cart details function
     const fetchCartDetails = async () => {
@@ -41,6 +42,7 @@ const OrderConfirmation = () => {
 
         if (!customerId) {
             console.error('No customer ID found for order confirmation');
+            setConfirmationMessage('No customer ID found for order confirmation');
             return;
         }
 
@@ -50,9 +52,16 @@ const OrderConfirmation = () => {
                 paymentMethod, // Send selected payment method
             });
             console.log('Order confirmation response:', response.data);
-            setOrderConfirmed(true); // Update order confirmation status
+
+            // Ensure `confirmationMessage` is a string
+            const message = response.data.message || 'Order confirmed successfully!';
+            const salesId = response.data.salesId ? ` Sales ID: ${response.data.salesId}` : '';
+
+            setOrderConfirmed(true);  // Update order confirmation status
+            setConfirmationMessage(`${message}${salesId}`); // Update with a string message
         } catch (error) {
             console.error('Error confirming order:', error);
+            setConfirmationMessage('An error occurred during order confirmation.');
         }
     };
 
@@ -115,7 +124,7 @@ const OrderConfirmation = () => {
 
             <button onClick={handleConfirmOrder}>Confirm Order</button>
 
-            {orderConfirmed && <p>Your order has been confirmed!</p>} {/* Display confirmation message */}
+            {orderConfirmed && <p>{confirmationMessage}</p>} {/* Display dynamic confirmation message */}
         </div>
     );
 };

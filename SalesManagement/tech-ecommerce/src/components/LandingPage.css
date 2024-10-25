@@ -2,7 +2,7 @@
 .landing-page {
   position: relative; /* Enables positioning of the buttons */
   min-height: 100vh;
-  background: url('D:\H\GitHub\Tech-ecommerce\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
+  background: url('C:\Users\SaiArya\Downloads\Tech-ecommerce\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
   background-size: cover; /* Ensure the image covers the entire area */
   background-attachment: fixed; /* Optional: creates a parallax effect */
   filter: blur(0);
