@@ -7,8 +7,8 @@ const LandingPage = () => {
   return (
     <div className="landing-page">
       <div className="landing-buttons">
-        <Link to="/login" className="landing-btn">Login</Link>
-        <Link to="/signup" className="landing-btn">Sign Up</Link>
+        <Link to="/login" className="landing-btn">LOGIN</Link>
+        <Link to="/signup" className="landing-btn">SIGN UP</Link>
       </div>
     </div>
   );

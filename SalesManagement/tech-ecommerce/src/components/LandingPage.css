@@ -2,7 +2,7 @@
 .landing-page {
   position: relative; /* Enables positioning of the buttons */
   min-height: 100vh;
-  background: url('C:\Users\SaiArya\Downloads\Tech-ecommerce\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
+  background: url('C:\Users\saiar\Documents\GitHub\Tech-ecommerce-2-\SalesManagement\tech-ecommerce\public\Wallpaper.png') no-repeat center center/cover; /* Set your image path */
   background-size: cover; /* Ensure the image covers the entire area */
   background-attachment: fixed; /* Optional: creates a parallax effect */
   filter: blur(0);
@@ -18,15 +18,15 @@
 }
 
 .landing-btn {
+  position: relative; /* Needed for absolute positioning of pseudo-elements */
   padding: 12px 30px;
-  background-color: #421e78;
+  background-color: #0c0317;
   color: white;
   text-decoration: none;
   border-radius: 5px;
   font-size: 1.2rem;
   transition: background-color 0.3s;
+  overflow: hidden; /* Prevents glow from overflowing */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 1.0);
 }
 
-.landing-btn:hover {
-  background-color: #541253;
-}

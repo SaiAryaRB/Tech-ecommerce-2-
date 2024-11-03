@@ -1,78 +1,78 @@
-/* src/components/Login.css */
-.login-container {
-    max-width: 400px;
-    margin: 50px auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    background-color: #fff;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  .login-toggle {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  
-  .toggle-button {
-    flex: 1;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    margin-right: 10px; /* Space between buttons */
-  }
-  
-  .toggle-button:last-child {
-    margin-right: 0; /* Remove margin for the last button */
-  }
-  
-  .toggle-button.active {
-    background-color: #0056b3; /* Darker blue for the active button */
-  }
-  
-  .toggle-button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  label {
-    display: block;
-    margin-bottom: 5px;
-  }
-  
-  input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button[type='submit'] {
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-  }
-  
-  button[type='submit']:hover {
-    background-color: #0056b3; /* Darker blue on submit button hover */
-  }
-  
-  .success-message {
-    color: green; /* Set the text color to green */
-    font-weight: bold; /* Make the text bold */
-    margin-top: 10px; /* Add some space above the message */
-  }
-  
+/* src/components/LandingPage.css */
+.landing-page {
+  position: relative; /* Enables positioning of the buttons */
+  min-height: 100vh;
+  background: url('C:\Users\saiar\Documents\GitHub\Tech-ecommerce-2-\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
+  background-size: cover; /* Ensure the image covers the entire area */
+  background-attachment: fixed; /* Optional: creates a parallax effect */
+  filter: blur(0);
+}
+
+.landing-buttons {
+  position: absolute; /* Position buttons absolutely within the container */
+  bottom: 23%; /* Distance from the bottom */
+  right: 14.5%; /* Distance from the right */
+  display: flex;
+  flex-direction: row; /* Stack buttons vertically */
+  gap: 10px; /* Space between buttons */
+}
+
+.landing-btn {
+  position: relative; /* Needed for absolute positioning of pseudo-elements */
+  padding: 12px 30px;
+  background-color: #371b54; /* Darker shade of purple for button background */
+  color: #f0e7e7; /* Light text color for contrast */
+  text-decoration: none; /* No underline */
+  border-radius: 5px; /* Rounded corners */
+  font-size: 1.2rem; /* Font size */
+  font-family: 'Arial', sans-serif; /* Nice font */
+  transition: background-color 0.3s, transform 0.2s, color 0.3s; /* Transition effects */
+  overflow: hidden; /* Prevents glow from overflowing */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Shadow for depth */
+}
+
+.landing-btn::before {
+  content: ""; /* Required for the pseudo-element */
+  position: absolute; /* Position it absolutely */
+  top: 0; /* Align to the top */
+  left: 0; /* Align to the left */
+  width: 100%; /* Full width of the button */
+  height: 100%; /* Full height of the button */
+  border-radius: 5px; /* Match button border radius */
+  background: linear-gradient(
+    45deg,
+    #FF0000, #FF7300, #FFFB00, #48FF00,
+    #00FFD5, #002BFF, #FF00C8, #FF0000
+  ); /* Gradient for the glow */
+  background-size: 600%; /* For animation */
+  filter: blur(8px); /* Blur effect for glow */
+  animation: glowing 20s linear infinite; /* Continuous glowing effect */
+  opacity: 0; /* Start hidden */
+  transition: opacity 0.3s ease-in-out; /* Smooth transition for opacity */
+  z-index: -1; /* Position behind the button */
+}
+
+.landing-btn:hover::before {
+  opacity: 1; /* Show glow on hover */
+}
+
+.landing-btn:active {
+  color: #000; /* Change text color to black on active */
+  font-weight: bold; /* Bold text on active */
+}
+
+.landing-btn:active::before {
+  background: transparent; /* Hide glow background on active */
+}
+
+@keyframes glowing {
+  0% { background-position: 0 0; }
+  50% { background-position: 400% 0; }
+  100% { background-position: 0 0; }
+}
+
+.landing-btn:hover {
+  background-color: #4c1a65; /* Slightly darker shade on hover */
+  transform: scale(1.05); /* Slight scale up effect on hover */
+  color: #000; /* Change text color to black on hover */
+}
