@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom'; // Import Link for navigation
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate for navigation
 import './admin.css';
 import { Line } from 'react-chartjs-2';
-import { FaBoxOpen, FaFileAlt } from 'react-icons/fa';
+import { FaBoxOpen, FaFileAlt, FaSignOutAlt } from 'react-icons/fa'; // Import SignOut icon
 import axios from 'axios'; // Import Axios
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import Lottie from 'react-lottie';
+import inventoryanimation from '../assets/Inventory Management Animation.json';
+import reportAnimation from '../assets/Report Generation Animation.json';
 
 // Register necessary components for the chart
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -13,6 +16,7 @@ const AdminHomePage = () => {
   const [salesData, setSalesData] = useState(null);
   const [error, setError] = useState(null);
   const adminName = "Admin"; // You can update this with dynamic values later when backend is ready
+  const navigate = useNavigate(); // Use navigate for redirecting
 
   // Fetch sales data from backend
   useEffect(() => {
@@ -34,7 +38,7 @@ const AdminHomePage = () => {
     labels: salesData ? salesData.dailySales.map(sale => sale.day) : [],
     datasets: [
       {
-        label: 'Daily Sales ($)',
+        label: 'Daily Sales (RS.)',
         data: salesData ? salesData.dailySales.map(sale => sale.totalSales) : [],
         backgroundColor: 'rgba(75, 192, 192, 0.6)',
         borderColor: 'rgba(75, 192, 192, 1)',
@@ -43,8 +47,38 @@ const AdminHomePage = () => {
     ],
   };
 
+  // Logout handler
+  const handleLogout = () => {
+    sessionStorage.removeItem('role'); // Remove session storage item
+    navigate('/login'); // Navigate to login page
+  };
+
+  // Animation options for Inventory Management
+  const inventoryOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: inventoryanimation,
+    rendererSettings: { preserveAspectRatio: 'xMidYMid slice' },
+  };
+
+  // Animation options for Report Generation
+  const reportOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: reportAnimation,
+    rendererSettings: { preserveAspectRatio: 'xMidYMid slice' },
+  };
+
   return (
     <div className="admin-dashboard">
+      {/* Logout button */}
+      <div className="logout-button">
+        <button onClick={handleLogout}>
+        <FaSignOutAlt />
+          Logout
+          </button>
+      </div>
+
       <div className="welcome-section">
         <h1>Welcome, {adminName}!</h1>
         <p>Here are this month's stats and management options.</p>
@@ -59,7 +93,7 @@ const AdminHomePage = () => {
           ) : (
             <ul>
               <li><strong>Sales Made:</strong> {salesData ? salesData.salesMade : 0}</li>
-              <li><strong>Total Revenue:</strong> ${salesData ? salesData.totalRevenue : 0}</li>
+              <li><strong>Total Revenue:</strong> RS  {salesData ? salesData.totalRevenue : 0}</li>
               <li><strong>Items Sold:</strong> {salesData ? salesData.itemsSold : 0}</li>
             </ul>
           )}
@@ -72,31 +106,25 @@ const AdminHomePage = () => {
         </div>
 
         {/* Management Options Section */}
-        <div className="management-options">
+        <div className="manoptions">
           <h2>Management Options</h2>
           <ul>
             <li>
               <Link to="/admin/inventory" className="management-option">
+                {/* Lottie Animation for Inventory Management */}
+                <Lottie options={inventoryOptions} height={200} width={200} />
                 <FaBoxOpen />
                 <span className="option-title">Inventory Management</span>
               </Link>
-              <ul className="sub-options">
-                <li>Update Stock</li>
-                <li>View Inventory</li>
-                <li>Low Stock Alerts</li>
-              </ul>
             </li>
 
             <li>
               <Link to="/admin/report" className="management-option">
+                {/* Lottie Animation for Report Generation */}
+                <Lottie options={reportOptions} height={200} width={200} />
                 <FaFileAlt />
                 <span className="option-title">Report Generation</span>
               </Link>
-              <ul className="sub-options">
-                <li>Generate Sales Report</li>
-                <li>Inventory Report</li>
-                <li>Customer Activity</li>
-              </ul>
             </li>
           </ul>
         </div>

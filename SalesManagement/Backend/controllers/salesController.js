@@ -9,7 +9,7 @@ const xyz = async (req, res) => {
         DAY(SalesDate) AS day, 
         SUM(SalesAmount) AS totalSales
       FROM SALES
-      WHERE YEAR(SalesDate) = 2024 AND MONTH(SalesDate) = 10
+      WHERE YEAR(SalesDate) = YEAR(CURDATE()) AND MONTH(SalesDate) = MONTH(CURDATE())
       GROUP BY DAY(SalesDate)
       ORDER BY DAY(SalesDate);
     `, (err, dailySales) => {
@@ -18,7 +18,7 @@ const xyz = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
       }
 
-      // Query to get total sales made, total revenue, and items sold for October 2023
+      // Query to get total sales made, total revenue, and items sold for Current Month
       connection.query(`
         SELECT 
           COUNT(DISTINCT S.SalesID) AS salesMade, 
@@ -26,7 +26,7 @@ const xyz = async (req, res) => {
           SUM(PS.Quantity) AS itemsSold
         FROM SALES S
         LEFT JOIN PRODUCT_SALES PS ON S.SalesID = PS.Sales_ID
-        WHERE YEAR(S.SalesDate) = 2024 AND MONTH(S.SalesDate) = 10;
+        WHERE YEAR(S.SalesDate) = YEAR(CURDATE()) AND MONTH(S.SalesDate) = MONTH(CURDATE());
       `, (err, summaryStats) => {
         if (err) {
           console.error('Error fetching summary stats:', err);

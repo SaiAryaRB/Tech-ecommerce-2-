@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ReportGeneration.css';  // Include your custom CSS file
 import 'bootstrap/dist/css/bootstrap.min.css';  // Use Bootstrap for styling
 import { Table, Dropdown } from 'react-bootstrap';
+import { jsPDF } from 'jspdf';  // Import jsPDF
+import 'jspdf-autotable'; // Import the autoTable plugin
+import { FaCalendar } from 'react-icons/fa';
+
 const ReportGeneration = () => {
   const [reportData, setReportData] = useState([]);
   const [reportType, setReportType] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Set default dates to today's date on component mount
+  useEffect(() => {
+    const today = new Date().toLocaleDateString('en-CA');
+    setStartDate(today);
+    setEndDate(today);
+  }, []);
 
   const generateReport = async (type) => {
     setReportType(type);
@@ -24,6 +35,7 @@ const ReportGeneration = () => {
         url = `http://localhost:3000/api/reports/customer/${type}`;
       } else if (
         type === 'AllProducts' ||
+        type === 'CurrentProducts' ||
         type === 'TopSelling' ||
         type === 'WorstSelling' ||
         type === 'BestReviews' ||
@@ -53,12 +65,46 @@ const ReportGeneration = () => {
   };
 
   const exportToCSV = () => {
-    
+    if (reportData.length === 0) {
+      alert('No data to export!');
+      return;
+    }
+
+    const headers = Object.keys(reportData[0]).join(','); // CSV headers
+    const rows = reportData.map((row) => Object.values(row).join(',')); // CSV rows
+
+    const csvContent = [headers, ...rows].join('\n'); // Join headers and rows
+    const blob = new Blob([csvContent], { type: 'text/csv' }); // Create a Blob for the CSV content
+    const url = window.URL.createObjectURL(blob); // Create URL for the Blob
+
+    const a = document.createElement('a'); // Create an anchor element
+    a.href = url;
+    a.download = `${reportType}.csv`; // Set download filename
+    a.click(); // Trigger the download
   };
 
   const exportToPDF = () => {
-    // Implement PDF export functionality
+    if (reportData.length === 0) {
+      alert('No data to export!');
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text(`Report Type: ${reportType.charAt(0).toUpperCase() + reportType.slice(1)}`, 10, 10); // Add a title
+
+    const headers = [Object.keys(reportData[0])];
+    const rows = reportData.map((row) => Object.values(row));
+
+    // Add table to the PDF
+    doc.autoTable({
+      head: headers,
+      body: rows,
+      startY: 20, // Position below the title
+    });
+
+    doc.save(`${reportType}.pdf`); // Save the PDF
   };
+
 
   return (
     <div className="container">
@@ -118,11 +164,14 @@ const ReportGeneration = () => {
             <Dropdown.Item onClick={() => generateReport('AllProducts')}>
               All Products
             </Dropdown.Item>
+            <Dropdown.Item onClick={() => generateReport('CurrentProducts')}>
+              Current Products
+            </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('TopSelling')}>
-              Top Selling Products
+              Top Selling Products <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('WorstSelling')}>
-              Worst Selling Products
+              Worst Selling Products <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('BestReviews')}>
               Top Reviewed Products
@@ -147,10 +196,10 @@ const ReportGeneration = () => {
               All Subcategories
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('TopSellingCategories')}>
-              Top Selling Categories
+              Top Selling Categories <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('TopSellingSubcategories')}>
-              Top Selling Subcategories
+              Top Selling Subcategories <FaCalendar/>
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
@@ -161,19 +210,19 @@ const ReportGeneration = () => {
 
           <Dropdown.Menu>
             <Dropdown.Item onClick={() => generateReport('AllSales')}>
-              All Sales
+              All Sales <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('BestSales')}>
-              Best Sales
+              Best Sales <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('DemographicSales')}>
-              Demographic Sales
+              Demographic Sales <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('SalesByPaymentMethod')}>
-              Sales By Payment Methods
+              Sales By Payment Methods <FaCalendar/>
             </Dropdown.Item>
             <Dropdown.Item onClick={() => generateReport('SalesSummary')}>
-              Sales Summary 
+              Sales Summary <FaCalendar/>
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>

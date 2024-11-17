@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios'; // Import axios for making API requests
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import Lottie from 'react-lottie'; // Import Lottie for animation
+import LoginAnimation from '../assets/LoginAnimation.json'; // Adjust the import path as needed
 import './Login.css'; // Import CSS for styling
 
 const Login = () => {
@@ -51,7 +53,7 @@ const Login = () => {
       setEmail('');
       setPassword('');
 
-      // Store user role in localStorage
+      // Store user role in sessionStorage
       sessionStorage.setItem('role', userType);
       console.log(`role successfully stored in sessionStorage: ${sessionStorage.getItem('role')}`); // Store user role (admin or customer)
 
@@ -86,48 +88,59 @@ const Login = () => {
     }
   };
 
+  const logoOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: LoginAnimation,
+    rendererSettings: { preserveAspectRatio: 'xMidYMid slice' }
+  };
+
   return (
-    <div className="login-container">
-      <div className="login-toggle">
-        <button
-          className={`toggle-button ${userType === 'customer' ? 'active' : ''}`}
-          onClick={() => handleUserTypeChange('customer')}
-        >
-          Customer Login
-        </button>
-        <button
-          className={`toggle-button ${userType === 'admin' ? 'active' : ''}`}
-          onClick={() => handleUserTypeChange('admin')}
-        >
-          Admin Login
-        </button>
+    <div className="login-page">
+      <div className="login-container">
+        <Lottie options={logoOptions} height="200px" width="200px" /> {/* Adjust size as needed */}
+        
+        <div className="login-toggle">
+          <button
+            className={`toggle-button ${userType === 'customer' ? 'active' : ''}`}
+            onClick={() => handleUserTypeChange('customer')}
+          >
+            Customer Login
+          </button>
+          <button
+            className={`toggle-button ${userType === 'admin' ? 'active' : ''}`}
+            onClick={() => handleUserTypeChange('admin')}
+          >
+            Admin Login
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              type="email"
+              id="email"
+              placeholder="Email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)} // Update email state
+            />
+          </div>
+          <div className="form-group">
+            <input
+              type="password"
+              id="password"
+              placeholder="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)} // Update password state
+            />
+          </div>
+          {error && <p className="error-message">{error}</p>} {/* Show error message if present */}
+          {success && <p className="success-message">{success}</p>} {/* Show success message if present */}
+          <button type="submit">Login</button>
+        </form>
       </div>
-      <h2>{userType === 'admin' ? 'Admin Login' : 'Customer Login'}</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)} // Update email state
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)} // Update password state
-          />
-        </div>
-        {error && <p className="error-message">{error}</p>} {/* Show error message if present */}
-        {success && <p className="success-message">{success}</p>} {/* Show success message if present */}
-        <button type="submit">Login</button>
-      </form>
     </div>
   );
 };

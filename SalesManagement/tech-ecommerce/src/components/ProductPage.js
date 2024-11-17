@@ -1,23 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,  useRef } from 'react';
 import './ProductPage.css'; // CSS for styling
 import { FaShoppingCart } from 'react-icons/fa'; // Add shopping cart icon
 import axios from 'axios'; // Import axios for API requests
 import Navbar from './NavBar';
+import Slider from 'react-slick'; // Importing React Slick for the carousel
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
+import Lottie from 'react-lottie'; // Import Lottie for animation
+import ConsumerElectronicsAnimation from '../assets/ConsumerElectronicsAnimation.json'; 
+import HomeElectronicsAnimation from '../assets/HomeElectronicsAnimation.json';  // Add more animation imports
+import WearablesAnimation from '../assets/WearablesAnimation.json';
+import TechAccesoriesAnimation from '../assets/TechAccesoriesAnimation.json';
+
 
 const ProductPage = () => {
   const [superCategories, setSuperCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [products, setProducts] = useState([]);
-  const [selectedSuperCategory, setSelectedSuperCategory] = useState('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('');
+  const [selectedSuperCategory, setSelectedSuperCategory] = useState(null); // Set initial state to null
+  const [selectedSubCategory, setSelectedSubCategory] = useState(null); // Set initial state to null
+  const [selectedProduct, setSelectedProduct] = useState(null); // State for selected product
   const [showReviews, setShowReviews] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [reviews, setReviews] = useState([]); // To store fetched reviews
   const [averageRating, setAverageRating] = useState(null); // To store average rating
-
   const [showAddReview, setShowAddReview] = useState(false); // Show Add Review form
   const [rating, setRating] = useState(1); // Default rating
   const [reviewText, setReviewText] = useState(''); // Default review text
+  const [cartResponse, setCartResponse] = useState(null);
+  const sliderRef = useRef(null);
+
+  // Animation mappings based on supercategory
+  const animationMapping = {
+    "Consumer Electronics": ConsumerElectronicsAnimation,
+    "Tech Accessories": TechAccesoriesAnimation,
+    "Wearables": WearablesAnimation,
+    "Home Electronics": HomeElectronicsAnimation,
+    // Add more mappings for other supercategories
+  };
 
   // Retrieve customerId from sessionStorage
   useEffect(() => {
@@ -31,9 +51,6 @@ const ProductPage = () => {
       try {
         const response = await axios.get('http://localhost:3000/products/supercategories'); // Adjust to your endpoint
         setSuperCategories(response.data);
-        if (response.data.length > 0) {
-          setSelectedSuperCategory(response.data[0].Super_Category); // Set default to first super category
-        }
       } catch (error) {
         console.error('Error fetching super categories:', error);
       }
@@ -49,17 +66,21 @@ const ProductPage = () => {
         try {
           const response = await axios.post('http://localhost:3000/products/subcategories', { superCategory: selectedSuperCategory });
           setSubCategories(response.data);
-          if (response.data.length > 0) {
-            setSelectedSubCategory(response.data[0].Category_Name); // Set default to first subcategory
-          }
+          setSelectedSubCategory(null); // Reset subcategory when supercategory changes
+          setProducts([]); // Clear products when changing supercategory
         } catch (error) {
           console.error('Error fetching sub categories:', error);
         }
       }
     };
 
-    fetchSubCategories();
-  }, [selectedSuperCategory]);
+    if (selectedSuperCategory) {
+      fetchSubCategories();
+    }
+    if (sliderRef.current) {
+      sliderRef.current.slickGoTo(0);
+    }
+  }, [selectedSuperCategory]); // Trigger when super category changes
 
   // Fetch Products when Sub Category is selected
   useEffect(() => {
@@ -74,12 +95,15 @@ const ProductPage = () => {
       }
     };
 
-    fetchProducts();
-  }, [selectedSubCategory]);
+    if (selectedSubCategory) {
+      fetchProducts();
+    }
+  }, [selectedSubCategory]); // Trigger when subcategory changes
 
   const addToCart = async (productId) => {
     const customerId = sessionStorage.getItem('customerId'); // Retrieve customerId from sessionStorage
     console.log(`Adding product with id ${productId} to cart for customerId: ${customerId}`);
+    
     try {
       const response = await axios.post('http://localhost:3000/api/cart', {
         productId,
@@ -87,8 +111,10 @@ const ProductPage = () => {
         quantity: 1, // Default quantity to add
       });
       console.log('Product added to cart:', response.data);
+      setCartResponse(response.data); // Update state with response data for pop-up
     } catch (error) {
       console.error('Error adding product to cart:', error);
+      setCartResponse({ message: 'Failed to add product to cart. Please try again.' });
     }
   };
 
@@ -96,7 +122,6 @@ const ProductPage = () => {
     try {
       const response = await axios.post('http://localhost:3000/products/reviews', { productId: product.Product_ID });
       if (response.data.reviews.length === 0) {
-        // If no reviews found, set reviews to an empty array
         setReviews([]);
         setAverageRating(null);
       } else {
@@ -124,19 +149,18 @@ const ProductPage = () => {
       console.error('No customerId found in sessionStorage');
       return;
     }
-      // Logging to check the values before sending them to the backend
-  console.log('Submitting review with:', {
-    customerId,
-    productId: currentProduct.Product_ID,
-    rating, // This should not be undefined
-    reviewText
-  });
+    console.log('Submitting review with:', {
+      customerId,
+      productId: currentProduct.Product_ID,
+      rating,
+      reviewText
+    });
 
     try {
       const response = await axios.post('http://localhost:3000/api/addreview', {
         customerId,
         productId: currentProduct.Product_ID,
-        reviewRating : rating,
+        reviewRating: rating,
         reviewText
       });
 
@@ -144,125 +168,213 @@ const ProductPage = () => {
       setShowAddReview(false); // Close review form after submission
       setRating(1); // Reset rating
       setReviewText(''); // Reset review text
-      // Optionally, fetch updated reviews after submission
     } catch (error) {
       console.error('Error submitting review:', error);
     }
   };
+  const sliderSettings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 3,
+    slidesToScroll: 1,
+    responsive: [
+      {
+        breakpoint: 768, // Adjust for smaller screens
+        settings: {
+          slidesToShow: 2,
+        }
+      },
+      {
+        breakpoint: 480, // Adjust for even smaller screens
+        settings: {
+          slidesToShow: 1,
+        }
+      }
+    ]
+  };
 
   return (
     <div className="product-page">
-      <Navbar />
-      <h1>Products</h1>
+    <Navbar/>
       {/* Super Categories */}
       <div className="super-categories">
-        {superCategories.map(superCategory => (
-          <button
-            key={superCategory.Super_Category}
-            className={selectedSuperCategory === superCategory.Super_Category ? 'active' : ''}
+  {superCategories.map(superCategory => (
+    <div
+      key={superCategory.Super_Category}
+      className={`super-category-card ${selectedSuperCategory === superCategory.Super_Category ? 'active' : ''}`}
+      onClick={() => {
+        // If the same supercategory is clicked again, reset everything
+        if (selectedSuperCategory === superCategory.Super_Category) {
+          setSelectedSuperCategory(null);
+          setSelectedSubCategory(null);
+          setProducts([]); // Clear products when unselecting supercategory
+        } else {
+          setSelectedSuperCategory(superCategory.Super_Category);
+          setSelectedSubCategory(null); // Reset subcategory when selecting new supercategory
+          setProducts([]); // Clear products when changing supercategory
+        }
+      }}
+    >
+      <div className="animation-container">
+        <Lottie 
+          options={{
+            loop: true,
+            autoplay: true,
+            animationData: animationMapping[superCategory.Super_Category],
+            rendererSettings: { preserveAspectRatio: 'xMidYMid slice' }
+          }}
+          height="150px" 
+          width="150px"
+        />
+      </div>
+      <h3>{superCategory.Super_Category}</h3>
+    </div>
+  ))}
+</div>
+
+
+{selectedSuperCategory && (
+  <div className="sub-categories-slider">
+    <Slider ref={sliderRef} {...sliderSettings}>
+      {subCategories.map(subCategory => (
+        <div
+          key={subCategory.Category_ID}
+          className={`sub-category-card ${selectedSubCategory === subCategory.Category_Name ? 'active' : ''}`}
+          onClick={() => {
+            if (selectedSubCategory === subCategory.Category_Name) {
+              setSelectedSubCategory(null);
+              setProducts([]); // Clear products when unselecting subcategory
+            } else {
+              setSelectedSubCategory(subCategory.Category_Name);
+            }
+          }}
+        >
+          <h3>{subCategory.Category_Name}</h3>
+        </div>
+      ))}
+    </Slider>
+  </div>
+)}
+
+
+      {/* Products: Only show when a Sub Category is selected */}
+      {selectedSubCategory && (
+  <div className="product-grid">
+    {products.length === 0 ? (
+      <p>No products available in this subcategory.</p> // Message when no products
+    ) : (
+      products.map(product => (
+        <div 
+          className={`product-card ${selectedProduct === product.Product_ID ? 'active' : ''}`} 
+          key={product.Product_ID}
+          onClick={() => {
+            if (selectedProduct === product.Product_ID) {
+              setSelectedProduct(null); // Unselect product
+            } else {
+              setSelectedProduct(product.Product_ID); // Select product
+            }
+          }}
+        >
+          <img 
+            src={product.image} 
+            alt={product.Product_Name} 
             onClick={() => {
-              setSelectedSuperCategory(superCategory.Super_Category);
-              setSelectedSubCategory(''); // Reset subcategory on supercategory change
-              setProducts([]); // Clear products when changing supercategory
+              alert('Image clicked: ' + product.Product_Name); // Or any other action
             }}
-          >
-            {superCategory.Super_Category}
-          </button>
-        ))}
-      </div>
-
-      {/* Subcategories */}
-      <div className="sub-categories">
-        {subCategories.map(subCategory => (
-          <button
-            key={subCategory.Category_ID}
-            className={selectedSubCategory === subCategory.Category_Name ? 'active' : ''}
-            onClick={() => setSelectedSubCategory(subCategory.Category_Name)}
-          >
-            {subCategory.Category_Name}
-          </button>
-        ))}
-      </div>
-
-      {/* Products */}
-      <div className="product-grid">
-        {products.map(product => (
-          <div className="product-card" key={product.Product_ID}>
-            <img src={product.image} alt={product.Product_Name} />
-            <h3>{product.Product_Name}</h3>
-            <p>{product.Price}</p>
-            <div className="button-container">
-              <button className="add-to-cart" title="Add to Cart" onClick={() => addToCart(product.Product_ID)}>
-                <FaShoppingCart /> {/* Using react-icons shopping cart icon */}
-              </button>
-              <button className="reviews-button" onClick={() => handleShowReviews(product)}>
-                Reviews
-              </button>
-              <button className="add-review-button" onClick={() => {
-                setCurrentProduct(product);
-                setShowAddReview(true);
-              }}>
-                Add Review
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Reviews Modal */}
-      {showReviews && currentProduct && (
-        <div className="reviews-modal">
-          <div className="modal-content">
-            <span className="close" onClick={handleCloseReviews}>&times;</span>
-            <h2>Reviews for {currentProduct.Product_Name}</h2>
-            <p>Average Rating: {averageRating ? averageRating.toFixed(1) : 'No ratings available'}</p>
-            <ul>
-              {reviews.length > 0 ? (
-                reviews.map((review, index) => (
-                  <li key={index}>
-                    <p><strong>Rating:</strong> {review.Rating}/5</p>
-                    <p><strong>Review:</strong> {review.ReviewText}</p>
-                  </li>
-                ))
-              ) : (
-                <p>No reviews available for this product.</p> // Message for no reviews
-              )}
-            </ul>
+          />
+          <h3>{product.Product_Name}</h3>
+          <p>{`₹${parseFloat(product.Price).toFixed(2)}`}</p> {/* Dollar sign before price */}
+          <div className="button-container">
+            <button onClick={() => addToCart(product.Product_ID)}>
+              <FaShoppingCart /> Add to Cart
+            </button>
+            <button onClick={() => handleShowReviews(product)}>
+              View Reviews
+            </button>
           </div>
         </div>
-      )}
+      ))
+    )}
+  </div>
+)}
 
-{showAddReview && currentProduct && (
-  <div className="add-review-modal">
+{/* Conditional Pop-Up */}
+{cartResponse && (
+  <div className="popup">
+    <p>{cartResponse.message}</p>
+    <button onClick={() => setCartResponse(null)}>Close</button>
+  </div>
+)}
+
+
+
+
+{showReviews && currentProduct && (
+  <div className="reviews-modal">
     <div className="modal-content">
-      <h2>Add Review for {currentProduct.Product_Name}</h2>
-      
-      <label>Rating:</label>
-      <div className="rating-buttons">
-        {[1, 2, 3, 4, 5].map((num) => (
-          <button
-            key={num}
-            className={`rating-button ${rating === num ? 'selected' : ''}`}
-            onClick={() => setRating(num)} // Set the selected rating
-          >
-            {num}
-          </button>
-        ))}
+      <h2>REVIEWS FOR {currentProduct.Product_Name}</h2>
+
+      {averageRating && <p><strong>AVERAGE RATING:</strong> {averageRating.toFixed(2)}</p>}
+
+      {/* Display Reviews */}
+      <div className="reviews">
+        {reviews.length > 0 ? (
+          reviews.map((review, index) => (
+            <div key={index} className="review-card">
+              <p><strong>RATING:</strong> {review.Rating} stars</p>
+              <p><strong>REVIEW:</strong> {review.ReviewText}</p>
+            </div>
+          ))
+        ) : (
+          <p>No reviews yet. Be the first to write one!</p>
+        )}
       </div>
 
-      <label>Review:</label>
-      <textarea
-        value={reviewText}
-        onChange={(e) => setReviewText(e.target.value)} // Capture review text
-      />
-      <button onClick={handleAddReview}>Submit Review</button>
-      <button onClick={() => setShowAddReview(false)}>Cancel</button>
+      {/* Close Button - Changed to "Close Review" */}
+      <button onClick={handleCloseReviews} className="close-review">
+        Close Review
+      </button>
+
+      {/* Add Review Button */}
+      <button onClick={() => setShowAddReview(true)} className="add-review-btn">
+        Add Review
+      </button>
+
+      {/* Add Review Form */}
+      {showAddReview && (
+        <div className="add-review-form">
+          <h3>Write a Review</h3>
+
+          {/* Rating scale from 1 to 5 */}
+          <div className="rating-scale">
+  {[1, 2, 3, 4, 5].map((star) => (
+    <button
+      key={star}
+      onClick={() => setRating(rating === star ? null : star)} // Unselect if the same star is clicked again
+      className={`rating-button ${rating === star ? 'selected' : ''}`}
+    >
+      {star}
+    </button>
+  ))}
+</div>
+
+          <textarea
+            value={reviewText}
+            onChange={(e) => setReviewText(e.target.value)}
+            placeholder="Write your review..."
+          />
+          <button onClick={handleAddReview} className="submit-review-btn">Submit Review</button>
+          <button onClick={() => setShowAddReview(false)} className="cancel-review-btn">Cancel</button>
+        </div>
+      )}
     </div>
   </div>
 )}
+
+
     </div>
   );
 };
 
 export default ProductPage;
-

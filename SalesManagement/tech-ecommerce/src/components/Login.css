@@ -1,78 +1,131 @@
-/* src/components/LandingPage.css */
-.landing-page {
-  position: relative; /* Enables positioning of the buttons */
-  min-height: 100vh;
-  background: url('C:\Users\saiar\Documents\GitHub\Tech-ecommerce-2-\SalesManagement\tech-ecommerce\public\LandingPage.png') no-repeat center center/cover; /* Set your image path */
-  background-size: cover; /* Ensure the image covers the entire area */
-  background-attachment: fixed; /* Optional: creates a parallax effect */
-  filter: blur(0);
+/* Import Google Fonts for Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global styling for the login page */
+.login-page * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
 }
 
-.landing-buttons {
-  position: absolute; /* Position buttons absolutely within the container */
-  bottom: 23%; /* Distance from the bottom */
-  right: 14.5%; /* Distance from the right */
+/* Page background */
+.login-page {
   display: flex;
-  flex-direction: row; /* Stack buttons vertically */
-  gap: 10px; /* Space between buttons */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #1f293a;
+  background-image: url('C:/Users/saiar/Documents/GitHub/Tech-ecommerce-2-/SalesManagement/tech-ecommerce/public/Login.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 
-.landing-btn {
-  position: relative; /* Needed for absolute positioning of pseudo-elements */
-  padding: 12px 30px;
-  background-color: #371b54; /* Darker shade of purple for button background */
-  color: #f0e7e7; /* Light text color for contrast */
-  text-decoration: none; /* No underline */
-  border-radius: 5px; /* Rounded corners */
-  font-size: 1.2rem; /* Font size */
-  font-family: 'Arial', sans-serif; /* Nice font */
-  transition: background-color 0.3s, transform 0.2s, color 0.3s; /* Transition effects */
-  overflow: hidden; /* Prevents glow from overflowing */
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Shadow for depth */
+/* Container for the login form */
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 20px;
+  background-color: #2c4766;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 550px;
+  text-align: center;
 }
 
-.landing-btn::before {
-  content: ""; /* Required for the pseudo-element */
-  position: absolute; /* Position it absolutely */
-  top: 0; /* Align to the top */
-  left: 0; /* Align to the left */
-  width: 100%; /* Full width of the button */
-  height: 100%; /* Full height of the button */
-  border-radius: 5px; /* Match button border radius */
-  background: linear-gradient(
-    45deg,
-    #FF0000, #FF7300, #FFFB00, #48FF00,
-    #00FFD5, #002BFF, #FF00C8, #FF0000
-  ); /* Gradient for the glow */
-  background-size: 600%; /* For animation */
-  filter: blur(8px); /* Blur effect for glow */
-  animation: glowing 20s linear infinite; /* Continuous glowing effect */
-  opacity: 0; /* Start hidden */
-  transition: opacity 0.3s ease-in-out; /* Smooth transition for opacity */
-  z-index: -1; /* Position behind the button */
+/* Form toggle button styles */
+.login-toggle {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
-.landing-btn:hover::before {
-  opacity: 1; /* Show glow on hover */
+.toggle-button {
+  flex: 1;
+  padding: 12px;
+  background-color: transparent;
+  color: #0ef;
+  border: 2px solid #0ef;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  margin: 0 5px;
 }
 
-.landing-btn:active {
-  color: #000; /* Change text color to black on active */
-  font-weight: bold; /* Bold text on active */
+.toggle-button.active,
+.toggle-button:hover {
+  background-color: #0ef;
+  color: #2c4766;
 }
 
-.landing-btn:active::before {
-  background: transparent; /* Hide glow background on active */
+/* Input field styling */
+.form-group {
+  position: relative;
+  margin-bottom: 20px;
+  width: 100%;
 }
 
-@keyframes glowing {
-  0% { background-position: 0 0; }
-  50% { background-position: 400% 0; }
-  100% { background-position: 0 0; }
+.login-page input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 0 auto;
+  border: 2px solid #0ef;
+  border-radius: 30px;
+  background-color: transparent;
+  color: white;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.3s ease;
 }
 
-.landing-btn:hover {
-  background-color: #4c1a65; /* Slightly darker shade on hover */
-  transform: scale(1.05); /* Slight scale up effect on hover */
-  color: #000; /* Change text color to black on hover */
+.login-page input:focus,
+.login-page input:valid {
+  border-color: #0ef;
+}
+
+.login-page input::placeholder {
+  color: #ccc;
+  transition: color 0.3s ease;
+}
+
+/* Submit button styling */
+button[type='submit'] {
+  width: 100%;
+  padding: 12px;
+  background-color: #0ef;
+  border: none;
+  border-radius: 30px;
+  color: #2c4766;
+  font-weight: 600;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  max-width: 360px;
+  margin-top: 20px;
+}
+
+button[type='submit']:hover {
+  background-color: #0dd;
+}
+
+/* Error and Success Messages */
+.error-message,
+.success-message {
+  margin-top: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.error-message {
+  color: #ff4d4d;
+}
+
+.success-message {
+  color: #4dff88;
 }

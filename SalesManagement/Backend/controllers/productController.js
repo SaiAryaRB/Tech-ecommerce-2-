@@ -45,7 +45,7 @@ exports.products = (req, res) => {
 
         // Query to get products belonging to the Category_ID
         const productQuery = `
-            SELECT p.* FROM PRODUCTS p
+            SELECT p.* FROM PRODUCTS_ACTIVE p
             JOIN PRODUCT_CATEGORY pc ON p.Product_ID = pc.Product_ID
             WHERE pc.Category_ID = ?`;
         db.query(productQuery, [categoryId], (err, results) => {

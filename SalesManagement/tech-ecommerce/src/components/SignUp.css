@@ -1,34 +1,207 @@
-/* src/components/SignUp.css */
-.signup-container {
+/* Import Google Fonts for Poppins */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global styling for the signup page */
+.signup-page * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Container and general styles */
+.signup-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #1f293a;
+  background-image: url('C:/Users/saiar/Documents/GitHub/Tech-ecommerce-2-/SalesManagement/tech-ecommerce/public/Login.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.signup-page .signup-container {
+  position: relative;
+  width: 90%; /* Adjusted width for responsiveness */
   max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  background-color: #fff;
+  padding: 40px 20px;
+  background-color: #2c4766;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 550px;
+  text-align: center;
 }
 
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-input {
-  width: 95%;
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 5px;
-}
-
-button {
+/* Headings */
+.signup-page h2 {
+  font-size: 2em;
+  color: #0ef;
+  margin-bottom: 30px;
+  text-align: center;
   width: 100%;
-  padding: 10px;
-  background-color: #007bff;
+}
+
+/* Keyframes for sliding animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Applying animations to form steps */
+.form-step {
+  width: 100%;
+  display: none; /* Initially hide all steps */
+}
+
+.form-step.active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Classes for animating transitions */
+.form-step.entering-from-right {
+  animation: 0.5s ease-out forwards slideInRight;
+}
+
+.form-step.exiting-to-left {
+  animation: 0.5s ease-out forwards slideOutLeft;
+}
+
+.form-step.entering-from-left {
+  animation: 0.5s ease-out forwards slideInLeft;
+}
+
+.form-step.exiting-to-right {
+  animation: 0.5s ease-out forwards slideOutRight;
+}
+
+.signup-page .form-group {
+  position: relative;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.signup-page input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 0 auto;
+  border: 2px solid #0ef;
+  border-radius: 30px;
+  background-color: transparent;
   color: white;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.signup-page input:focus,
+.signup-page input:valid {
+  border-color: #0ef;
+}
+
+.signup-page input::placeholder {
+  color: #ccc;
+  transition: color 0.3s ease;
+}
+
+/* Buttons */
+.signup-page button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  background-color: #0ef;
   border: none;
-  border-radius: 5px;
+  border-radius: 30px;
+  color: #2c4766;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  max-width: 360px;
+}
+
+.signup-page button:hover {
+  background-color: #0dd;
+}
+
+.signup-page button[type='submit'] {
+  margin-top: 20px;
+}
+
+.signup-page .back-button {
+  background-color: transparent;
+  border: 2px solid #0ef;
+  color: #0ef;
+  padding: 12px;
+  width: 100%;
+  max-width: 360px;
+  border-radius: 30px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.signup-page .back-button:hover {
+  background-color: #0ef;
+  color: #2c4766;
+}
+
+/* Error and Success Messages */
+.signup-page .error-message,
+.signup-page .success-message {
+  margin-top: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.signup-page .error-message {
+  color: #ff4d4d;
+}
+
+.signup-page .success-message {
+  color: #4dff88;
 }

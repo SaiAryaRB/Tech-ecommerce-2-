@@ -3,7 +3,6 @@ CREATE TABLE Customers (
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NOT NULL,
     Email VARCHAR(100) NOT NULL UNIQUE,
-    CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
     House_Number VARCHAR(10) NOT NULL,
     Street_Name VARCHAR(100) NOT NULL,
     Pincode VARCHAR(10) NOT NULL,
@@ -58,7 +57,7 @@ CREATE TABLE PRODUCT_SALES (
     Quantity INT NOT NULL,
     FOREIGN KEY (Product_ID) REFERENCES Products(Product_ID) ON DELETE CASCADE,
     FOREIGN KEY (Sales_ID) REFERENCES Sales(SalesID) ON DELETE CASCADE,
-    PRIMARY KEY (Product_ID, Sales_ID)  -- Composite primary key
+    PRIMARY KEY (Product_ID, Sales_ID)  
 );
 
 CREATE TABLE PRODUCT_CATEGORY (
@@ -66,16 +65,40 @@ CREATE TABLE PRODUCT_CATEGORY (
     Category_ID INT NOT NULL,
     FOREIGN KEY (Product_ID) REFERENCES Products(Product_ID) ON DELETE CASCADE,
     FOREIGN KEY (Category_ID) REFERENCES Category(Category_ID) ON DELETE CASCADE,
-    PRIMARY KEY (Product_ID, Category_ID)  -- Composite primary key
+    PRIMARY KEY (Product_ID, Category_ID)  
 );
 
 CREATE TABLE Customer_Phone (
     Customer_ID INT NOT NULL,
     Phone_Number VARCHAR(15) NOT NULL,
     FOREIGN KEY (Customer_ID) REFERENCES Customers(Customer_ID) ON DELETE CASCADE,
-    PRIMARY KEY (Customer_ID, Phone_Number)  -- Composite primary key
+    PRIMARY KEY (Customer_ID, Phone_Number)  
 );
 
+CREATE TABLE Admins (
+    AdminID INT AUTO_INCREMENT PRIMARY KEY,  
+    email VARCHAR(255) NOT NULL UNIQUE,      
+    password VARCHAR(255) NOT NULL         
+) ; 
+
+
+CREATE TABLE CART (
+    CartID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    Product_ID INT,
+    Quantity INT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(Customer_ID) ON DELETE CASCADE,
+    FOREIGN KEY (Product_ID) REFERENCES PRODUCTS(Product_ID) ON DELETE CASCADE
+);
+
+ALTER TABLE Products
+ADD COLUMN image VARCHAR(250);
+
+CREATE TABLE Products_Active LIKE Products;
+
+
+INSERT INTO Admins (email, password) 
+VALUES ('admin@example.com', 'adminpasskey123');
 
 INSERT INTO Customers (FirstName, LastName, Email, CreatedDate, House_Number, Street_Name, Pincode, City)
 VALUES 
@@ -414,419 +437,8 @@ ADD COLUMN Password VARCHAR(255) NOT NULL;
 UPDATE Customers
 SET Password = 'password123';
 
-
-CREATE TABLE Admins (
-    AdminID INT AUTO_INCREMENT PRIMARY KEY,  -- Unique identifier for each admin
-    email VARCHAR(255) NOT NULL UNIQUE,      -- Admin's email address
-    password VARCHAR(255) NOT NULL          -- Admin's password (hashed)
-) ; 
-
-
-INSERT INTO Admins (email, password) 
-VALUES ('admin@example.com', 'adminpasskey123');
-
-CREATE TABLE CART (
-    CartID INT AUTO_INCREMENT PRIMARY KEY,
-    CustomerID INT,
-    Product_ID INT,
-    Quantity INT,
-    FOREIGN KEY (CustomerID) REFERENCES Customers(Customer_ID) ON DELETE CASCADE,
-    FOREIGN KEY (Product_ID) REFERENCES PRODUCTS(Product_ID) ON DELETE CASCADE
-);
-
---Stored Procedure for Adding to Cart
--- Change the delimiter
-DELIMITER //
-
-CREATE PROCEDURE AddToCart(IN p_CustomerID INT, IN p_ProductID INT, IN p_Quantity INT)
-BEGIN
-    DECLARE stockLevel INT;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Check stock level
-    SELECT Stock_Level INTO stockLevel FROM Inventory WHERE Product_ID = p_ProductID;
-
-    IF stockLevel >= p_Quantity THEN
-        -- Add item to cart
-        INSERT INTO CART (CustomerID, Product_ID, Quantity) VALUES (p_CustomerID, p_ProductID, p_Quantity);
-        
-        -- Decrement stock level
-        UPDATE Inventory SET Stock_Level = Stock_Level - p_Quantity WHERE Product_ID = p_ProductID;
-        
-        -- Commit transaction
-        COMMIT;
-
-        -- Return success message
-        SELECT 'Success: Item has been added to the cart.' AS Message;
-    ELSE
-        -- Rollback transaction
-        ROLLBACK;
-
-        -- Return out of stock message
-        SELECT 'Error: Product is out of stock.' AS Message;
-    END IF;
-END //
-
--- Restore the delimiter
-DELIMITER ;
-
---- Creating a View (Products + Carts ) ( To simplify Retrieval )
-CREATE VIEW CartView AS
-SELECT c.CartID, c.CustomerID, p.Product_ID, p.Product_Name, p.Price, c.Quantity
-FROM CART c
-JOIN PRODUCTS p ON c.Product_ID = p.Product_ID;
-
---Stored Procedure For Retrieving Cart Details
-DELIMITER //
-CREATE PROCEDURE GetCustomerCart(IN id INT)
-BEGIN
-    SELECT Product_Name, Product_ID, Quantity, Price, (Quantity * Price) AS Total_Price
-    FROM CartView
-    WHERE CustomerID = id;
-END //
-DELIMITER ;
-
---StoredProcedure to Update Cart Quantity
-DELIMITER //
-
-CREATE PROCEDURE UpdateCartQuantity(IN p_CustomerID INT, IN p_ProductID INT, IN p_NewQuantity INT)
-BEGIN
-    DECLARE stockLevel INT;
-    DECLARE currentQuantity INT;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Get current quantity in the cart
-    SELECT Quantity INTO currentQuantity
-    FROM CART
-    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
-
-    -- Check if the item exists in the cart
-    IF currentQuantity IS NOT NULL THEN
-        -- Get stock level for the product
-        SELECT Stock_Level INTO stockLevel
-        FROM Inventory
-        WHERE Product_ID = p_ProductID;
-
-        -- Check if there's enough stock to update the cart
-        IF stockLevel + currentQuantity >= p_NewQuantity THEN
-            -- Update quantity in the cart
-            UPDATE CART
-            SET Quantity = p_NewQuantity
-            WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
-
-            -- Adjust stock level in inventory
-            UPDATE Inventory
-            SET Stock_Level = stockLevel - (p_NewQuantity - currentQuantity)
-            WHERE Product_ID = p_ProductID;
-
-            -- Commit transaction
-            COMMIT;
-
-            -- Return success message
-            SELECT 'Success: Cart quantity updated.' AS Message;
-        ELSE
-            -- Rollback transaction if not enough stock
-            ROLLBACK;
-
-            -- Return out of stock message
-            SELECT 'Error: Not enough stock available.' AS Message;
-        END IF;
-    ELSE
-        -- Rollback transaction if item not found in the cart
-        ROLLBACK;
-
-        -- Return error message
-        SELECT 'Error: Item not found in the cart.' AS Message;
-    END IF;
-END //
-
-DELIMITER ;
---StoredProcedure(DeletefromCart)
-DELIMITER //
-
-CREATE PROCEDURE DeleteFromCart(IN p_CustomerID INT, IN p_ProductID INT)
-BEGIN
-    DECLARE currentQuantity INT;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Get current quantity in the cart
-    SELECT Quantity INTO currentQuantity
-    FROM CART
-    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
-
-    -- Check if the item exists in the cart
-    IF currentQuantity IS NOT NULL THEN
-        -- Adjust stock level in inventory
-        UPDATE Inventory
-        SET Stock_Level = Stock_Level + currentQuantity
-        WHERE Product_ID = p_ProductID;
-
-        -- Delete item from the cart
-        DELETE FROM CART
-        WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
-
-        -- Commit transaction
-        COMMIT;
-
-        -- Return success message
-        SELECT 'Success: Item removed from the cart.' AS Message;
-    ELSE
-        -- Rollback transaction if item not found in the cart
-        ROLLBACK;
-
-        -- Return error message
-        SELECT 'Error: Item not found in the cart.' AS Message;
-    END IF;
-END //
-
-DELIMITER ;
-
---MostImportantStoredProcedure(ConfirmingOrder)
-DELIMITER //
-
-CREATE PROCEDURE ConfirmOrder(
-    IN p_CustomerID INT,
-    IN p_PaymentMethod VARCHAR(255),
-    OUT p_SalesID INT
-)
-BEGIN
-    DECLARE v_SalesAmount DECIMAL(10,2);
-    
-    -- Calculate the total sales amount from the cart
-    SELECT SUM(Price*Quantity) INTO v_SalesAmount
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Insert into Sales table
-    INSERT INTO Sales (CustomerID, SalesAmount, PaymentMethod, SalesDate)
-    VALUES (p_CustomerID, v_SalesAmount, p_PaymentMethod, NOW());
-    
-    -- Get the last inserted SalesID
-    SET p_SalesID = LAST_INSERT_ID();
-
-    -- Insert into product_sales table
-    INSERT INTO product_sales (Product_ID, Sales_ID, UnitPrice, Quantity)
-    SELECT Product_ID, p_SalesID, Price, Quantity
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-    -- Delete entries from CART table
-    DELETE FROM CART WHERE CustomerID = p_CustomerID;
-
-    -- Commit transaction
-    COMMIT;
-END //
-
-DELIMITER ;
-
--- Insert inventory entries with a default stock level of 100 for each product
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (1, 100);  -- Apple iPhone
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (2, 100);  -- Samsung Galaxy
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (3, 100);  -- Google Pixel
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (4, 100);  -- Apple MacBook
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (5, 100);  -- Dell XPS
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (6, 100);  -- HP Spectre
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (7, 100);  -- Lenovo ThinkPad
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (8, 100);  -- HP Omen
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (9, 100);  -- Dell Inspiron
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (10, 100); -- Apple iPad
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (11, 100); -- Samsung Galaxy Tab
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (12, 100); -- Microsoft Surface Pro
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (13, 100); -- Sony PlayStation
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (14, 100); -- Microsoft Xbox
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (15, 100); -- Nintendo Switch
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (16, 100); -- Alienware Gaming PC
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (17, 100); -- HP Omen Gaming PC
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (18, 100); -- Razer Gaming PC
-
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (19, 100); -- Bose QuietComfort 35
-INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (20, 100); -- Sony WH-1000XM4
---Stored Procedure For Sign Up
-DELIMITER //
-
-CREATE PROCEDURE SignUp(
-    IN p_FirstName VARCHAR(255),
-    IN p_LastName VARCHAR(255),
-    IN p_Email VARCHAR(255),
-    IN p_House_Number VARCHAR(50),
-    IN p_Street_Name VARCHAR(255),
-    IN p_Pincode VARCHAR(10),
-    IN p_City VARCHAR(255),
-    IN p_Password VARCHAR(255),
-    IN p_PhoneNumbers TEXT  -- This should be a comma-separated list of phone numbers
-)
-BEGIN
-    DECLARE new_Customer_ID INT;
-    DECLARE phone_number VARCHAR(15);
-    
-    -- Declare the cursor for splitting phone numbers
-    DECLARE phone_numbers_cursor CURSOR FOR
-        SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_PhoneNumbers, ',', numbers.n), ',', -1)) 
-        FROM (
-            SELECT 1 AS n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
-            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
-        ) numbers
-        WHERE CHAR_LENGTH(p_PhoneNumbers) - CHAR_LENGTH(REPLACE(p_PhoneNumbers, ',', '')) >= numbers.n - 1;
-
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET phone_number = NULL;
-
-    -- Insert into the Customer table
-    INSERT INTO Customers (FirstName, LastName, Email, CreatedDate, House_Number, Street_Name, Pincode, City, Password)
-    VALUES (p_FirstName, p_LastName, p_Email, NOW(), p_House_Number, p_Street_Name, p_Pincode, p_City, p_Password);
-    
-    -- Get the last inserted Customer_ID
-    SET new_Customer_ID = LAST_INSERT_ID();
-
-    -- Insert phone numbers into the Phone table
-    IF p_PhoneNumbers IS NOT NULL THEN
-        OPEN phone_numbers_cursor;
-
-        read_loop: LOOP
-            FETCH phone_numbers_cursor INTO phone_number;
-            IF phone_number IS NULL THEN
-                LEAVE read_loop;
-            END IF;
-
-            INSERT INTO CUSTOMER_PHONE (Customer_ID, Phone_Number)
-            VALUES (new_Customer_ID, phone_number);
-        END LOOP;
-
-        CLOSE phone_numbers_cursor;
-    END IF;
-
-END //
-
-DELIMITER ;
-
---Stored procedure for Adding Reviews
-DELIMITER //
-
-CREATE PROCEDURE AddReview(
-    IN p_CustomerID INT,
-    IN p_ProductID INT,
-    IN p_Rating INT,
-    IN p_ReviewText TEXT
-)
-BEGIN
-    -- Insert the new review into the REVIEW table
-    INSERT INTO REVIEW (CustomerID, ProductID, Rating, ReviewText)
-    VALUES (p_CustomerID, p_ProductID, p_Rating, p_ReviewText);
-
-    -- Return success message
-    SELECT 'Success: Review added.' AS Message;
-END //
-
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE AddProductAndInventory(
-    IN p_Product_Name VARCHAR(255),
-    IN p_Quantity INT,
-    IN p_Price DECIMAL(10, 2)
-)
-BEGIN
-    DECLARE last_id INT;
-
-    -- Insert into Products table
-    INSERT INTO Products (Product_Name, Price) VALUES (p_Product_Name, p_Price);
-    
-    -- Get the last inserted Product_ID
-    SET last_id = LAST_INSERT_ID();
-
-    -- Insert into Inventory table
-    INSERT INTO Inventory (Product_ID, Stock_Level, DateChanged) VALUES (last_id, p_Quantity, NOW());
-END //
-
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE UpdateProductInventory(
-    IN p_Product_ID INT,
-    IN p_New_Quantity INT,
-    IN p_New_Product_Name VARCHAR(255),
-    IN p_New_Price DECIMAL(10, 2)
-)
-BEGIN
-    -- Update the Inventory table
-    UPDATE Inventory 
-    SET Stock_Level = p_New_Quantity, DateChanged = NOW()
-    WHERE Product_ID = p_Product_ID;
-
-    -- Update the Products table
-    UPDATE Products 
-    SET Product_Name = p_New_Product_Name, Price = p_New_Price
-    WHERE Product_ID = p_Product_ID;
-END //
-
-DELIMITER ;
-
-DELIMITER //
-
-CREATE PROCEDURE AddProductWithCategory(
-    IN p_Product_Name VARCHAR(255),
-    IN p_Quantity INT,
-    IN p_Price DECIMAL(10, 2),
-    IN p_Super_Category VARCHAR(255),
-    IN p_Category_Name VARCHAR(255)
-)
-BEGIN
-    DECLARE last_id INT;
-    DECLARE cat_id INT;
-
-    -- Insert into Products table
-    INSERT INTO Products (Product_Name, Price) VALUES (p_Product_Name, p_Price);
-    -- Get the last inserted Product_ID
-    SET last_id = LAST_INSERT_ID();
-
-    -- Debugging outputs for parameters
-    SELECT TRIM(p_Super_Category) AS DebugSuperCategory, 
-           TRIM(p_Category_Name) AS DebugCategoryName;
-
-    -- Retrieve the Category_ID based on Super_Category and Category_Name	
-    SELECT Category_ID INTO cat_id
-    FROM Category
-    WHERE Super_Category = p_Super_Category 
-      AND Category_Name = p_Category_Name;
- 
-    -- Debug output for Category_ID
-    SELECT cat_id AS DebugCategoryID;  -- Output the category_id
-
-    -- If category is found, insert into PRODUCT_CATEGORY table
-    IF cat_id IS NOT NULL THEN
-        INSERT INTO PRODUCT_CATEGORY (Product_ID, Category_ID) VALUES (last_id, cat_id);
-    ELSE
-        -- Handle the case where category is not found
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found';
-    END IF;
-
-    -- Insert into Inventory table
-    INSERT INTO Inventory (Product_ID, Stock_Level, DateChanged) VALUES (last_id, p_Quantity, NOW());
-END //
-
-DELIMITER ;
-
-ALTER TABLE Products
-ADD COLUMN image VARCHAR(250);
-
 UPDATE Products
-SET image = ''https://pngimg.com/d/iphone_12_PNG36.png"
+SET image = "https://pngimg.com/d/iphone_12_PNG36.png"
 WHERE product_id = 1;
 
 UPDATE Products
@@ -836,8 +448,7 @@ WHERE product_id = 2;
  UPDATE Products set IMAGE="https://www.pngarts.com/files/11/Android-Google-Pixel-Phone-PNG-Image-Background.png"
 WHERE PRODUCT_ID=3;
 
-UPDATE Products set IMAGE="https://i.pinimg.com/originals/b2/39/21/b2392123978a9779bb008b049c57fbec.png" WHERE PR
-ODUCT_ID=4;
+UPDATE Products set IMAGE="https://i.pinimg.com/originals/b2/39/21/b2392123978a9779bb008b049c57fbec.png" WHERE PRODUCT_ID=4;
 
 
 UPDATE Products set IMAGE= "https://png.pngitem.com/pimgs/s/297-2978265_dell-laptop-png-images-dell-xps-15-9570.png" WHERE PRODUCT_ID=5;
@@ -881,8 +492,7 @@ UPDATE Products set IMAGE= "https://media.alienwarearena.com/media/2022/09/Pictu
 UPDATE Products set IMAGE= "https://www.sennheiser.com/globalassets/digizuite/38361-en-hd_280_pro_product_shot_cutout_isofront.png.png/SennheiserFullWidth" WHERE PRODUCT_ID=21;
 
 
-UPDATE Products set IMAGE= "https://www.pngplay.com/wp-content/uploads/6/JBL-Audio-Speakers-Transparent-PNG.png" WHERE PRODUCT
-_ID=22;
+UPDATE Products set IMAGE= "https://www.pngplay.com/wp-content/uploads/6/JBL-Audio-Speakers-Transparent-PNG.png" WHERE PRODUCT_ID=22;
 
 
 UPDATE Products set IMAGE= "https://assets.bose.com/content/dam/Bose_DAM/Web/consumer_electronics/global/products/speakers/bose_portable_home_speaker/product_silo_images/bose_portable_home_speaker_black_EC_hero.psd/_jcr_content/renditions/cq5dam.web.320.320.png" WHERE PRODUCT_ID=23;
@@ -947,22 +557,378 @@ UPDATE Products set IMAGE="https://png.pngtree.com/png-vector/20240625/ourmid/pn
 
 
  UPDATE Products set IMAGE="https://www.mtech.am/assets/images/75/75d90d_ugreen-usb-c-to-ethernet-adapter-642856.png" WHERE PRODUCT_ID=42;
+ 
+ UPDATE Products set IMAGE="https://cdn.shoplightspeed.com/shops/645668/files/53880946/image.jpg" WHERE PRODUCT_ID=43;
+ 
+ UPDATE Products set IMAGE="https://m.media-amazon.com/images/I/7192eSVBsGL.jpg" WHERE PRODUCT_ID=44;
+ 
+  UPDATE Products set IMAGE="https://images-cdn.ubuy.co.in/63c6eaf5c41ea11c75185a93-jetech-screen-protector-for-iphone-11.jpg" WHERE PRODUCT_ID=45;
+  
+  UPDATE Products set IMAGE="https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/apple-pencil-pro-splitter-202405_FMT_WHH?wid=448&hei=800&fmt=png-alpha&.v=1713420587746" WHERE PRODUCT_ID=46;
+
+    UPDATE Products set IMAGE="https://cdn-media.wacom.com/-/media/images/carousels/homepage-a-slots/2020/2020-image-redux/bamboo-ink-plus-m-mobile.jpg?h=450&iar=0&w=726&rev=ebc21d9c2acd4d1fa53e3f6e9620f8f9&hash=8F3844FC87BE8FF37222FB6D4D709F52" WHERE PRODUCT_ID=47;
+
+    UPDATE Products set IMAGE="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTU5fdqa-fiTUl7eW5DOBaiaFirPIfd2Rky7g&s" WHERE PRODUCT_ID=48;
+    
+        UPDATE Products set IMAGE="https://www.pngplay.com/wp-content/uploads/9/Apple-Watch-Transparent-Free-PNG.png" WHERE PRODUCT_ID=49;
+        
+           UPDATE Products set IMAGE="https://images.samsung.com/is/image/samsung/p6pim/in/2208/gallery/in-galaxy-watch5-40mm-sm-r900nzsainu-533186491?$650_519_PNG$" WHERE PRODUCT_ID=50;
+           
+	UPDATE Products set IMAGE="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJnu4fJI5COWXCfVGHW4njOGJfTm1VLXUy_w&s" WHERE PRODUCT_ID=51;          
+           
+                   UPDATE Products set IMAGE="https://www.fitbit.com/global/content/dam/fitbit/global/pdp/devices/charge-5/hero-static/charge5-black-device-3qtr.png" WHERE PRODUCT_ID=52;
+                   
+				UPDATE Products set IMAGE="https://ph.garmin.com/m/ph/g/products/vivosmart4-black-iamge-01.png" WHERE PRODUCT_ID=53;    
+                
+                	UPDATE Products set IMAGE="https://png.pngtree.com/png-vector/20240802/ourmid/pngtree-xiaomi-mi-smart-band-png-image_13320417.png" WHERE PRODUCT_ID=54;    
+                    
+                    	UPDATE Products set IMAGE="https://i.pcmag.com/imagery/articles/02hgFllAGyzcSi6NOuOkI9c-1.fit_lim.size_1938x1092.v_1569470686.jpg" WHERE PRODUCT_ID=55;    
+                        
+			UPDATE Products set IMAGE="https://www.vuzix.com/cdn/shop/products/Blade-ALpng-LowLQuarter_f56be174-947e-4daf-9eb4-e13a55094595.png?v=1687370745" WHERE PRODUCT_ID=56;
+            
+            UPDATE Products set IMAGE="https://assets.bose.com/content/dam/cloudassets/Bose_DAM/Web/consumer_electronics/global/products/wearables/bose_frames_tempo/product_silo_images/tempo_product_page_ec_hero_1200x1022.png/jcr:content/renditions/cq5dam.web.1920.1920.png" WHERE PRODUCT_ID=57;
+            
+            UPDATE Products set IMAGE="https://png.pngtree.com/png-clipart/20230508/original/pngtree-airpods-png-image_9149137.png" WHERE PRODUCT_ID=58;
+            
+            UPDATE Products set IMAGE="https://atlas-content-cdn.pixelsquid.com/stock-images/samsung-galaxy-buds-live-earphones-koaqx33-600.jpg" WHERE PRODUCT_ID=59;
+            
+            UPDATE Products set IMAGE="https://media-ik.croma.com/prod/https://media.croma.com/image/upload/v1718788316/Croma%20Assets/Entertainment/Wireless%20Earbuds/Images/301580_0_eu3o0d.png?tr=w-600" WHERE PRODUCT_ID=60;
+            
+            UPDATE Products set IMAGE="https://media.croma.com/image/upload/v1675867689/Croma%20Assets/Entertainment/Speakers%20and%20Media%20Players/Images/230161_0_arf7hi.png" WHERE PRODUCT_ID=61;
+            
+            UPDATE Products set IMAGE="https://lh3.googleusercontent.com/Eg_xq-CBLO2X7br8h7Beuk8mQ0C2PfiPSKrBxfWpbdBwAvlWFWnN_IApunu881OVRnDg=w250" WHERE PRODUCT_ID=62;
+            
+            UPDATE Products set IMAGE="https://www.pngitem.com/pimgs/m/412-4120713_ring-video-doorbell-png-transparent-png.png" WHERE PRODUCT_ID=63;
+            
+            UPDATE Products set IMAGE="https://www.homemedialimited.co.uk/wp-content/uploads/2019/01/one-feature-blk.png" WHERE PRODUCT_ID=64;
+            
+            UPDATE Products set IMAGE="https://assets.bose.com/content/dam/Bose_DAM/Web/consumer_electronics/global/general/Datacapture/bose_soundbar_700_black_EC_hero.psd/_jcr_content/renditions/cq5dam.web.320.320.png" WHERE PRODUCT_ID=65;
+            
+            UPDATE Products set IMAGE="https://avshack.in/cdn/shop/products/411820_2_a4cd_jpg.png?v=1645615544&width=1214" WHERE PRODUCT_ID=66;
+            
+            UPDATE Products set IMAGE="https://images.samsung.com/is/image/samsung/p6pim/in/rs7fcg8113slhl/gallery/in-side-by-side-family-hub-rs7fcg8113slhl-535086472?$650_519_PNG$" WHERE PRODUCT_ID=67;
+            
+            UPDATE Products set IMAGE="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdRHvQ9fupA7LTb8amdUqhTD5IBpCQcgmzdA&s" WHERE PRODUCT_ID=68;
+            
+            UPDATE Products set IMAGE="https://images.keurig.com/is/image/keurig/K-Elite-Single-Serve-Coffee-Maker_5000359832?fmt=png-alpha" WHERE PRODUCT_ID=69;
+            
+            UPDATE Products set IMAGE="https://atlas-content-cdn.pixelsquid.com/stock-images/ring-video-doorbell-XllBq82-600.jpg" WHERE PRODUCT_ID=70;
+            
+            UPDATE Products set IMAGE="https://www.arlo.com/dw/image/v2/BDFZ_PRD/on/demandware.static/-/Sites-master-catalog-arlo/default/dwbdbaf08b/Products/HiRes%20Images/Go/2023/04%20-%20GO%202%20LTE%20-%20Wireless%20Camera.png?sw=375&sh=323&sm=fit" WHERE PRODUCT_ID=71;
+            
+            UPDATE Products set IMAGE="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfe9uAUCjCJ9gY7puGM9z-ZAJ-lEnXq_YQeQ&s" WHERE PRODUCT_ID=72;
+            
+            UPDATE Products set IMAGE="https://www.security.org/app/uploads/2019/07/SimpliSafe-Home-Security-System.png" WHERE PRODUCT_ID=73;
 
 
 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (1, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (2, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (3, 100);  
 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (4, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (5, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (6, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (7, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (8, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (9, 100); 
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (10, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (11, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (12, 100); 
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (13, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (14, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (15, 100); 
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (16, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (17, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (18, 100); 
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (19, 100); 
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (20, 100); 
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (21, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (22, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (23, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (24, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (25, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (26, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (27, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (28, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (29, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (30, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (31, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (32, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (33, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (34, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (35, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (36, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (37, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (38, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (39, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (40, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (41, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (42, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (43, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (44, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (45, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (46, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (47, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (48, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (49, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (50, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (51, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (52, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (53, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (54, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (55, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (56, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (57, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (58, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (59, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (60, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (61, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (62, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (63, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (64, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (65, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (66, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (67, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (68, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (69, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (70, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (71, 100);  
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (72, 100);  
+
+INSERT INTO Inventory (Product_ID, Stock_Level) VALUES (73, 100);
+
+
+-- Views 
+--- Creating a View (Products + Carts ) ( To simplify Retrieval )
+CREATE VIEW CartView AS
+SELECT c.CartID, c.CustomerID, p.Product_ID, p.Product_Name, p.Price, c.Quantity
+FROM CART c
+JOIN PRODUCTS p ON c.Product_ID = p.Product_ID;
+
+-- Creating a View For CustomerSales Overview
+CREATE VIEW CustomerSalesOverview AS
+SELECT 
+    C.Customer_ID,
+    C.FirstName,
+    C.LastName,
+    C.Email,
+    C.House_Number,
+    C.Street_Name,
+    C.City,
+    C.Pincode,
+    COUNT(S.SalesID) AS NumberOfSales,
+    SUM(S.SalesAmount) AS TotalSpent,
+    MAX(S.SalesDate) AS LastPurchaseDate
+FROM 
+    CUSTOMERS C
+LEFT JOIN 
+    SALES S ON C.Customer_ID = S.CustomerID
+GROUP BY 
+    C.Customer_ID;
+
+-- Creating a View for Product Sales with Categories
+CREATE VIEW ProductSalesWithCategories AS
+SELECT
+    s.SalesID,
+    s.CustomerID,
+    s.SalesAmount,
+    s.SalesDate,
+    ps.Product_ID,
+    ps.Quantity,
+    ps.UnitPrice,
+    (ps.Quantity * ps.UnitPrice) AS TotalSaleAmount,
+    c.Category_Name AS SubCategory,
+    c.Super_Category AS MainCategory
+FROM
+    SALES s
+JOIN
+    PRODUCT_SALES ps ON s.SalesID = ps.Sales_ID
+JOIN
+    PRODUCTS p ON ps.Product_ID = p.Product_ID
+JOIN
+    PRODUCT_CATEGORY pc ON p.Product_ID = pc.Product_ID
+JOIN
+    CATEGORY c ON pc.Category_ID = c.Category_ID;
+
+
+
+--Stored Procedure For Retrieving Cart Details
 DELIMITER //
-CREATE TRIGGER AfterStockUpdate
-AFTER UPDATE ON Inventory
-FOR EACH ROW
+CREATE PROCEDURE GetCustomerCart(IN id INT)
 BEGIN
-    -- If stock level is 0, remove the product from all carts
-    IF NEW.Stock_Level = 0 THEN
-        DELETE FROM CART WHERE Product_ID = NEW.Product_ID;
+    SELECT Product_Name, Product_ID, Quantity, Price, (Quantity * Price) AS Total_Price
+    FROM CartView
+    WHERE CustomerID = id;
+END //
+DELIMITER ;
+
+
+--Stored Procedure For Sign Up
+DELIMITER //
+
+CREATE PROCEDURE SignUp(
+    IN p_FirstName VARCHAR(255),
+    IN p_LastName VARCHAR(255),
+    IN p_Email VARCHAR(255),
+    IN p_House_Number VARCHAR(50),
+    IN p_Street_Name VARCHAR(255),
+    IN p_Pincode VARCHAR(10),
+    IN p_City VARCHAR(255),
+    IN p_Password VARCHAR(255),
+    IN p_PhoneNumbers TEXT  
+)
+BEGIN
+    DECLARE new_Customer_ID INT;
+    DECLARE phone_number VARCHAR(15);
+    
+    
+    DECLARE phone_numbers_cursor CURSOR FOR
+        SELECT TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(p_PhoneNumbers, ',', numbers.n), ',', -1)) 
+        FROM (
+            SELECT 1 AS n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+        ) numbers
+        WHERE CHAR_LENGTH(p_PhoneNumbers) - CHAR_LENGTH(REPLACE(p_PhoneNumbers, ',', '')) >= numbers.n - 1;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET phone_number = NULL;
+
+    
+    INSERT INTO Customers (FirstName, LastName, Email, CreatedDate, House_Number, Street_Name, Pincode, City, Password)
+    VALUES (p_FirstName, p_LastName, p_Email, NOW(), p_House_Number, p_Street_Name, p_Pincode, p_City, p_Password);
+    
+    
+    SET new_Customer_ID = LAST_INSERT_ID();
+
+    
+    IF p_PhoneNumbers IS NOT NULL THEN
+        OPEN phone_numbers_cursor;
+
+        read_loop: LOOP
+            FETCH phone_numbers_cursor INTO phone_number;
+            IF phone_number IS NULL THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO CUSTOMER_PHONE (Customer_ID, Phone_Number)
+            VALUES (new_Customer_ID, phone_number);
+        END LOOP;
+
+        CLOSE phone_numbers_cursor;
     END IF;
+
 END //
 
 DELIMITER ;
+
+--Stored procedure for Adding Reviews
+DELIMITER //
+
+CREATE PROCEDURE AddReview(
+    IN p_CustomerID INT,
+    IN p_ProductID INT,
+    IN p_Rating INT,
+    IN p_ReviewText TEXT
+)
+BEGIN
+    
+    INSERT INTO REVIEW (CustomerID, ProductID, Rating, ReviewText)
+    VALUES (p_CustomerID, p_ProductID, p_Rating, p_ReviewText);
+
+    -- Return success message
+    SELECT 'Success: Review added.' AS Message;
+END //
+
+DELIMITER ;
+
+CREATE PROCEDURE AddProductWithCategory(
+    IN p_Product_Name VARCHAR(255),
+    IN p_Quantity INT,
+    IN p_Price DECIMAL(10, 2),
+    IN p_Super_Category VARCHAR(255),
+    IN p_Category_Name VARCHAR(255),
+    IN p_Image VARCHAR(255)  -- New parameter for image link
+)
+BEGIN
+    DECLARE last_id INT;
+    DECLARE cat_id INT;
+
+    -- Insert into Products table with image link
+    INSERT INTO Products (Product_Name, Price, Image) VALUES (p_Product_Name, p_Price, p_Image);
+    -- Get the last inserted Product_ID
+    SET last_id = LAST_INSERT_ID();
+
+    -- Debugging outputs for parameters
+    SELECT TRIM(p_Super_Category) AS DebugSuperCategory, 
+           TRIM(p_Category_Name) AS DebugCategoryName;
+
+    -- Retrieve the Category_ID based on Super_Category and Category_Name	
+    SELECT Category_ID INTO cat_id
+    FROM Category
+    WHERE Super_Category = p_Super_Category 
+      AND Category_Name = p_Category_Name;
+ 
+    -- Debug output for Category_ID
+    SELECT cat_id AS DebugCategoryID;  -- Output the category_id
+
+    -- If category is found, insert into PRODUCT_CATEGORY table
+    IF cat_id IS NOT NULL THEN
+        INSERT INTO PRODUCT_CATEGORY (Product_ID, Category_ID) VALUES (last_id, cat_id);
+    ELSE
+        -- Handle the case where category is not found
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Category not found';
+    END IF;
+
+    -- Insert into Inventory table
+    INSERT INTO Inventory (Product_ID, Stock_Level, DateChanged) VALUES (last_id, p_Quantity, NOW());
+END //
+
+DELIMITER ;
+DELIMITER //
+
+CREATE PROCEDURE UpdateProductInventory(
+    IN p_Product_ID INT,
+    IN p_New_Quantity INT,
+    IN p_New_Product_Name VARCHAR(255),
+    IN p_New_Price DECIMAL(10, 2)
+)
+BEGIN
+    -- Update the Inventory table
+    UPDATE Inventory 
+    SET Stock_Level = p_New_Quantity, DateChanged = NOW()
+    WHERE Product_ID = p_Product_ID;
+
+    -- Update the Products table
+    UPDATE Products 
+    SET Product_Name = p_New_Product_Name, Price = p_New_Price
+    WHERE Product_ID = p_Product_ID;
+END //
+
+DELIMITER ;
+
 
 DELIMITER //
 
@@ -1064,188 +1030,6 @@ END //
 
 DELIMITER ;
 
-
-DELIMITER //
-
-DELIMITER //
-
-CREATE PROCEDURE ConfirmOrder(
-    IN p_CustomerID INT,
-    IN p_PaymentMethod VARCHAR(255),
-    OUT p_SalesID INT
-)
-BEGIN
-    DECLARE v_SalesAmount DECIMAL(10, 2);
-    DECLARE v_Stock INT;
-    DECLARE v_ProductID INT;
-    DECLARE v_Quantity INT;
-    DECLARE v_ProductName VARCHAR(255); -- Declare to hold product name
-    DECLARE done BOOLEAN DEFAULT FALSE;
-
-    -- Declare the cursor and the handler
-    DECLARE cart_cursor CURSOR FOR
-        SELECT Product_ID, Quantity FROM CART WHERE CustomerID = p_CustomerID;
-
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Open cursor
-    OPEN cart_cursor;
-
-    -- Loop through each product in the cart and check stock availability
-    read_loop: LOOP
-        FETCH cart_cursor INTO v_ProductID, v_Quantity;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-
-        -- Check stock level and get product name for each product in the cart
-       SELECT i.Stock_Level, p.Product_Name 
-INTO v_Stock, v_ProductName
-FROM Inventory i
-JOIN Products p ON i.Product_ID = p.Product_ID
-WHERE i.Product_ID = v_ProductID;
-
-        -- If stock is insufficient, rollback and exit
-        IF v_Stock < v_Quantity THEN
-            ROLLBACK;
-            SELECT CONCAT('Error: ', v_ProductName, ' is no longer in stock.') AS Message; -- Include product name in message
-            CLOSE cart_cursor;
-            LEAVE read_loop;
-        END IF;
-    END LOOP;
-
-    -- Close cursor
-    CLOSE cart_cursor;
-
-    -- Calculate the total sales amount from the cart
-    SELECT SUM(Price * Quantity) INTO v_SalesAmount
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-    -- Insert into Sales table
-    INSERT INTO Sales (CustomerID, SalesAmount, PaymentMethod, SalesDate)
-    VALUES (p_CustomerID, v_SalesAmount, p_PaymentMethod, NOW());
-
-    -- Get the last inserted SalesID
-    SET p_SalesID = LAST_INSERT_ID();
-
-    -- Insert into product_sales table
-    INSERT INTO product_sales (Product_ID, Sales_ID, UnitPrice, Quantity)
-    SELECT Product_ID, p_SalesID, Price, Quantity
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-    -- Adjust stock for each product in the cart
-    UPDATE Inventory i
-    JOIN CART c ON i.Product_ID = c.Product_ID
-    SET i.Stock_Level = i.Stock_Level - c.Quantity
-    WHERE c.CustomerID = p_CustomerID;
-
-    -- Delete entries from CART table after confirmation
-    DELETE FROM CART WHERE CustomerID = p_CustomerID;
-
-    -- Commit transaction
-    COMMIT;
-
-    -- Return success message
-    SELECT 'Success: Order confirmed.' AS Message;
-END //
-
-DELIMITER ;
-
-
-DELIMITER //
-
-CREATE PROCEDURE ConfirmOrder(
-    IN p_CustomerID INT,
-    IN p_PaymentMethod VARCHAR(255),
-    OUT p_SalesID INT
-)
-BEGIN
-    DECLARE v_SalesAmount DECIMAL(10,2);
-    
-    -- Calculate the total sales amount from the cart
-    SELECT SUM(Price*Quantity) INTO v_SalesAmount
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-    -- Start transaction
-    START TRANSACTION;
-    BEGIN
-    DECLARE v_SalesAmount DECIMAL(10, 2);
-    DECLARE v_Stock INT;
-    DECLARE v_ProductID INT;
-    DECLARE v_Quantity INT;
-    DECLARE v_ProductName VARCHAR(255); -- Declare to hold product name
-    DECLARE done BOOLEAN DEFAULT FALSE;
-
-    -- Declare the cursor and the handler
-    DECLARE cart_cursor CURSOR FOR
-        SELECT Product_ID, Quantity FROM CART WHERE CustomerID = p_CustomerID;
-
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Open cursor
-    OPEN cart_cursor;
-
-    -- Loop through each product in the cart and check stock availability
-    read_loop: LOOP
-        FETCH cart_cursor INTO v_ProductID, v_Quantity;
-        IF done THEN
-            LEAVE read_loop;
-        END IF;
-
-        -- Check stock level and get product name for each product in the cart
-       SELECT i.Stock_Level, p.Product_Name 
-INTO v_Stock, v_ProductName
-FROM Inventory i
-JOIN Products p ON i.Product_ID = p.Product_ID
-WHERE i.Product_ID = v_ProductID;
-
-        -- If stock is insufficient, rollback and exit
-        IF v_Stock < v_Quantity THEN
-            ROLLBACK;
-            SELECT CONCAT('Error: ', v_ProductName, ' is no longer in stock.') AS Message; -- Include product name in message
-            CLOSE cart_cursor;
-            LEAVE read_loop;
-        END IF;
-    END LOOP;
-
-    -- Close cursor
-    CLOSE cart_cursor;
-
-    -- Insert into Sales table
-    INSERT INTO Sales (CustomerID, SalesAmount, PaymentMethod, SalesDate)
-    VALUES (p_CustomerID, v_SalesAmount, p_PaymentMethod, NOW());
-    
-    -- Get the last inserted SalesID
-    SET p_SalesID = LAST_INSERT_ID();
-
-    -- Insert into product_sales table
-    INSERT INTO product_sales (Product_ID, Sales_ID, UnitPrice, Quantity)
-    SELECT Product_ID, p_SalesID, Price, Quantity
-    FROM CartView
-    WHERE CustomerID = p_CustomerID;
-
-        UPDATE Inventory i
-    JOIN CART c ON i.Product_ID = c.Product_ID
-    SET i.Stock_Level = i.Stock_Level - c.Quantity
-    WHERE c.CustomerID = p_CustomerID;
-
-    -- Delete entries from CART table
-    DELETE FROM CART WHERE CustomerID = p_CustomerID;
-
-    -- Commit transaction
-    COMMIT;
-END //
-
-
 DELIMITER //
 
 CREATE PROCEDURE ConfirmOrder(
@@ -1310,3 +1094,338 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+DELIMITER //
+
+CREATE PROCEDURE DeleteFromCart(IN p_CustomerID INT, IN p_ProductID INT)
+BEGIN
+    DECLARE currentQuantity INT;
+
+    -- Start transaction
+    START TRANSACTION;
+
+    -- Get current quantity in the cart
+    SELECT Quantity INTO currentQuantity
+    FROM CART
+    WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+    -- Check if the item exists in the cart
+    IF currentQuantity IS NOT NULL THEN
+        -- Delete item from the cart
+        DELETE FROM CART
+        WHERE CustomerID = p_CustomerID AND Product_ID = p_ProductID;
+
+        -- Commit transaction
+        COMMIT;
+
+        -- Return success message
+        SELECT 'Success: Item removed from the cart.' AS Message;
+    ELSE
+        -- Rollback transaction if item not found in the cart
+        ROLLBACK;
+
+        -- Return error message
+        SELECT 'Error: Item not found in the cart.' AS Message;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+-- Report Generation
+
+DELIMITER //
+
+CREATE PROCEDURE GetSalesReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+    -- Set endDate to include the entire day up to 23:59:59
+    DECLARE adjustedEndDate DATETIME;
+    SET adjustedEndDate = DATE_ADD(endDate, INTERVAL 1 DAY) - INTERVAL 1 SECOND;
+
+    IF reportType = 'AllSales' THEN
+        SELECT *
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND adjustedEndDate;
+
+    ELSEIF reportType = 'DemographicSales' THEN
+        SELECT
+            c.City,
+            COUNT(s.SalesID) AS NumberOfSales,
+            SUM(s.SalesAmount) AS TotalSalesAmount
+        FROM Sales s
+        JOIN Customers c ON s.CustomerID = c.Customer_ID
+        WHERE s.SalesDate BETWEEN startDate AND adjustedEndDate
+        GROUP BY c.City
+        ORDER BY NumberOfSales DESC;
+
+    ELSEIF reportType = 'BestSales' THEN
+        SELECT *
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND adjustedEndDate
+        ORDER BY SalesAmount DESC
+        LIMIT 10;
+
+    ELSEIF reportType = 'SalesByPaymentMethod' THEN
+        SELECT
+            PaymentMethod,
+            COUNT(SalesID) AS NumberOfSales,
+            SUM(SalesAmount) AS TotalSalesAmount
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND adjustedEndDate
+        GROUP BY PaymentMethod;
+
+    ELSEIF reportType = 'SalesSummary' THEN
+        SELECT
+            COUNT(SalesID) AS TotalTransactions,
+            SUM(SalesAmount) AS TotalSalesAmount,
+            AVG(SalesAmount) AS AverageAmountPerTransaction
+        FROM Sales
+        WHERE SalesDate BETWEEN startDate AND adjustedEndDate;
+
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Invalid report type specified.';
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE GetProductReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+    -- Declare adjusted end date for including the entire end date
+    DECLARE adjustedEndDate DATETIME;
+    SET adjustedEndDate = DATE_ADD(endDate, INTERVAL 1 DAY) - INTERVAL 1 SECOND;
+
+    CASE reportType
+        -- All Products (Ignore Date)
+        WHEN 'AllProducts' THEN
+            SELECT p.Product_ID, p.Product_Name, p.Price
+            FROM PRODUCTS p;
+        WHEN 'CurrentProducts' THEN
+            SELECT p.PRODUCT_ID , p.Product_Name , p.Price 
+            FROM PRODUCTS_Active p;
+
+        -- Top Selling Products (With Date Filter)
+        WHEN 'TopSelling' THEN
+            SELECT p.Product_ID, p.Product_Name, SUM(ps.Quantity) AS TotalSold
+            FROM PRODUCTS p
+            JOIN PRODUCT_SALES ps ON p.Product_ID = ps.Product_ID
+            WHERE ps.Sales_ID IN (SELECT SalesID FROM SALES WHERE SalesDate BETWEEN startDate AND adjustedEndDate)
+            GROUP BY p.Product_ID
+            ORDER BY TotalSold DESC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        -- Worst Selling Products (With Date Filter)
+        WHEN 'WorstSelling' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(SUM(ps.Quantity), 0) AS TotalSold
+            FROM PRODUCTS p
+            LEFT JOIN PRODUCT_SALES ps ON p.Product_ID = ps.Product_ID
+            LEFT JOIN SALES s ON ps.Sales_ID = s.SalesID AND s.SalesDate BETWEEN startDate AND adjustedEndDate
+            GROUP BY p.Product_ID
+            ORDER BY TotalSold ASC
+            LIMIT 10;
+
+        -- Products with Best Reviews (Ignore Date)
+        WHEN 'BestReviews' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(AVG(r.Rating), 0) AS AverageRating
+            FROM PRODUCTS p
+            JOIN REVIEW r ON p.Product_ID = r.ProductID
+            GROUP BY p.Product_ID
+            ORDER BY AverageRating DESC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        -- Products with Worst Reviews (Ignore Date)
+        WHEN 'WorstReviews' THEN
+            SELECT p.Product_ID, p.Product_Name, IFNULL(AVG(r.Rating), 0) AS AverageRating
+            FROM PRODUCTS p
+            JOIN REVIEW r ON p.Product_ID = r.ProductID
+            GROUP BY p.Product_ID
+            ORDER BY AverageRating ASC
+            LIMIT 10;  -- Adjust the limit as necessary
+
+        ELSE
+            SELECT 'Invalid report type' AS ErrorMessage;
+    END CASE;
+END $$
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE GetCategoryReports(
+    IN reportType VARCHAR(50),
+    IN startDate DATE,
+    IN endDate DATE
+)
+BEGIN
+    -- Declare adjustedEndDate to include the last second of the endDate
+    DECLARE adjustedEndDate DATETIME;
+    SET adjustedEndDate = DATE_ADD(endDate, INTERVAL 1 DAY) - INTERVAL 1 SECOND;
+
+    -- Query for All Categories
+    IF reportType = 'AllCategories' THEN
+        SELECT DISTINCT 
+            c.Super_Category AS Category
+        FROM 
+            CATEGORY c;
+
+    -- Query for All Subcategories
+    ELSEIF reportType = 'AllSubcategories' THEN
+        SELECT 
+            c.Category_Name AS SubCategory
+        FROM 
+            CATEGORY c;
+
+    -- Query for Top-Selling Categories (Main Categories) with date filtering
+    ELSEIF reportType = 'TopSellingCategories' THEN
+        SELECT
+            MainCategory,
+            SUM(TotalSaleAmount) AS TotalSales
+        FROM
+            ProductSalesWithCategories
+        WHERE
+            SalesDate BETWEEN startDate AND adjustedEndDate
+        GROUP BY
+            MainCategory
+        ORDER BY
+            TotalSales DESC
+        LIMIT 10;  -- Adjust limit as needed
+
+    -- Query for Top-Selling Subcategories with date filtering
+    ELSEIF reportType = 'TopSellingSubcategories' THEN
+        SELECT
+            SubCategory AS CATEGORY,
+            SUM(TotalSaleAmount) AS TotalSales
+        FROM
+            ProductSalesWithCategories
+        WHERE
+            SalesDate BETWEEN startDate AND adjustedEndDate
+        GROUP BY
+            MainCategory, SubCategory
+        ORDER BY
+            TotalSales DESC
+        LIMIT 10;  -- Adjust limit as needed
+
+    ELSE
+        SELECT 'Invalid report type' AS ErrorMessage;
+    END IF;
+END //
+
+DELIMITER ;
+
+
+
+
+-- Stored Procedure for Customer Report Generation
+DELIMITER $$
+
+CREATE PROCEDURE GenerateCustomerReport(
+    IN reportType VARCHAR(50)  
+)
+BEGIN
+    CASE reportType
+        -- Customer Demographic Report
+        WHEN 'CustomerDemographic' THEN
+            SELECT City, COUNT(Customer_ID) AS NumberOfCustomers
+            FROM CustomerSalesOverview
+            GROUP BY City
+            ORDER BY NumberOfCustomers DESC
+            LIMIT 10;
+
+        -- Top Customers by Amount
+        WHEN 'TopCustomersByAmount' THEN
+            SELECT FirstName, LastName, Email, TotalSpent
+            FROM CustomerSalesOverview
+            ORDER BY TotalSpent DESC
+            LIMIT 10;
+
+        -- Frequent Customers by Sales
+        WHEN 'FrequentCustomers' THEN
+            SELECT FirstName, LastName, Email, NumberOfSales
+            FROM CustomerSalesOverview
+            ORDER BY NumberOfSales DESC
+            LIMIT 10;
+
+        -- All Customers Report
+        WHEN 'AllCustomers' THEN
+            SELECT FirstName, LastName, Email, House_Number, Street_Name , City , Pincode
+            FROM CustomerSalesOverview;
+
+        -- Inactive Customers Report
+        WHEN 'InactiveCustomers' THEN
+            SELECT FirstName,LastName,Email
+            FROM CustomerSalesOverview
+            WHERE LastPurchaseDate < DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH) 
+             OR LastPurchaseDate IS NULL;
+
+        ELSE
+            SELECT 'Invalid report type.' AS ErrorMessage;
+    END CASE;
+END $$
+
+DELIMITER ;
+---Triggers For our project
+DELIMITER //
+
+CREATE TRIGGER update_products_active
+AFTER UPDATE ON Products
+FOR EACH ROW
+BEGIN
+    UPDATE Products_Active
+    SET Product_Name = NEW.Product_Name,
+        Price = NEW.Price,
+        image = NEW.image
+    WHERE Product_ID = NEW.Product_ID;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER delete_from_inventory
+AFTER DELETE ON Products_Active
+FOR EACH ROW
+BEGIN
+    DELETE FROM Inventory
+    WHERE Product_ID = OLD.Product_ID;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER insert_into_products_active
+AFTER INSERT ON Products
+FOR EACH ROW
+BEGIN
+    INSERT INTO Products_Active (Product_ID, Product_Name, Price, image)
+    VALUES (NEW.Product_ID, NEW.Product_Name, NEW.Price, NEW.image);
+END //
+
+DELIMITER ;
+
+CREATE TRIGGER delete_from_cart
+AFTER DELETE ON Products_Active
+FOR EACH ROW
+BEGIN
+    DELETE FROM Cart
+    WHERE Product_ID = OLD.Product_ID;
+END //
+
+DELIMITER ;
+
+
+
+
+

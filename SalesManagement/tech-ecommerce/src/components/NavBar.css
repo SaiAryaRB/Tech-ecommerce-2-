@@ -1,34 +1,67 @@
-/* src/components/Navbar.css */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: white;
-  }
-  
-  .navbar h2 {
-    margin: 0;
-  }
-  
-  .nav-links {
-    list-style: none;
-    display: flex;
-    gap: 20px;
-  }
-  
-  .nav-links li {
-    padding: 10px 0;
-  }
-  
-  .nav-links a {
-    color: white;
-    text-decoration: none;
-    transition: color 0.3s;
-  }
-  
-  .nav-links a:hover {
-    color: #ddd;
-  }
-  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1a1a40;
+  color: white;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0px 20px;
+  z-index: 1000;
+  height: 100px;
+}
+/* NavBar.css */
+.logo-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.navbar-logo {
+  max-height: 300px;        /* Slightly smaller than navbar height */
+  width: auto;
+  display: block;
+  object-fit: contain;
+  margin: 0;              /* Remove any default margins */
+}
+
+.navbar h2 {
+  margin: 0;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-links li {
+  padding: 10px 0;
+}
+
+/* New button styling for Cart, Logout, and Customer Details */
+.nav-button {
+  background-color: #1a1a40;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 15px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+/* Ensure links inside buttons look like buttons */
+.nav-button a {
+  color: white;
+  text-decoration: none;
+}
+
+/* Hover effect */
+.nav-button:hover {
+  background-color: #333366;
+}
+

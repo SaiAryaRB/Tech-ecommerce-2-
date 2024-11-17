@@ -7,29 +7,31 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear session storage for customerId (or clear all if necessary)
     sessionStorage.removeItem('customerId');
     sessionStorage.removeItem('role');
-    // Or to clear everything: sessionStorage.clear();
-    
-    // Redirect to the login page
     navigate('/login');
   };
 
   return (
     <nav className="navbar">
-      <h2>E-Commerce</h2>
+      <div className="logo-container">
+  <img src="/Logo_Navbar.png" alt="logo" class="navbar-logo" />
+</div>
       <ul className="nav-links">
         <li>
-          <Link to="/cart">Cart</Link>
-        </li>
-        <li>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
+          <button className="nav-button">
+            <Link to="/cart">CART</Link>
           </button>
         </li>
         <li>
-          <Link to="/customer-details">Customer Details</Link>
+          <button onClick={handleLogout} className="nav-button">
+            LOGOUT
+          </button>
+        </li>
+        <li>
+          <button className="nav-button">
+            <Link to="/customer-details">CUSTOMER DETAILS</Link>
+          </button>
         </li>
       </ul>
     </nav>

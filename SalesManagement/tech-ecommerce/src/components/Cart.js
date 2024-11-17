@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FaTrash } from 'react-icons/fa';
+import './Cart.css'
 
 const Cart = () => {
     const navigate = useNavigate();
@@ -80,43 +81,48 @@ const Cart = () => {
     };
 
     return (
-        <div>
-            <h1>Your Cart</h1>
+        <div className="cart-container">
+            <h1 className="cart-title">Your Cart</h1>
             {cartItems.length === 0 ? (
-                <p>Your cart is empty.</p>
+                <p className="cart-empty">Your cart is empty.</p>
             ) : (
-                <ul>
-                    {cartItems.map((item) => {
-                        // Detailed console logs for each item
-                        console.log('Cart Item:', item); // Log the entire item
-                        console.log('Product Name:', item.Product_Name);
-                        console.log('Quantity:', item.Quantity);
-                        console.log('Price:', item.Price);
-                        console.log('Total Price:', item.Total_Price);
-                        console.log('Product ID:', item.Product_ID); // Ensure this key exists
-
-                        return (
-                            <li key={item.Product_ID}> {/* Ensure ProductID is used as key */}
-                                {item.Product_Name} - ${parseFloat(item.Price).toFixed(2)} x 
-                                <input
-                                    type="number"
-                                    value={item.Quantity}
-                                    min="1"
-                                    style={{ width: '50px', marginLeft: '10px' }}
-                                    onChange={(e) => handleQuantityChange(item.Product_ID, parseInt(e.target.value) || 1)} // Use ProductID here
-                                />
-                                = ${parseFloat(item.Total_Price).toFixed(2)}
-                                <FaTrash
-                                    onClick={() => handleDeleteItem(item.Product_ID)} // Ensure correct reference
-                                    style={{ color: 'red', cursor: 'pointer', marginLeft: '10px' }}
-                                />
-                            </li>
-                        );
-                    })}
+                <ul className="cart-items">
+                    {cartItems.map((item) => (
+                        <li className="cart-item" key={item.Product_ID}>
+                            <div className="item-details">
+                                <span className="item-name">{item.Product_Name}</span>
+                                <span className="item-price"> - ₹{parseFloat(item.Price).toFixed(2)}</span>
+                                <div className="quantity-container">
+                                    <button
+                                        className="quantity-button"
+                                        onClick={() => handleQuantityChange(item.Product_ID, item.Quantity - 1)}
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        type="text"
+                                        className="quantity-input"
+                                        value={item.Quantity}
+                                        readOnly
+                                    />
+                                    <button
+                                        className="quantity-button"
+                                        onClick={() => handleQuantityChange(item.Product_ID, item.Quantity + 1)}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                                <span className="item-total"> = ₹{parseFloat(item.Total_Price).toFixed(2)}</span>
+                            </div>
+                            <FaTrash className="delete-icon" onClick={() => handleDeleteItem(item.Product_ID)} />
+                        </li>
+                    ))}
                 </ul>
             )}
-            <h2>Total Price: ${totalPrice.toFixed(2)}</h2>
-            <button onClick={handleProceedToOrder}>Proceed to Order Confirmation</button>
+            <h2 className="total-price">Total Price: ₹{totalPrice.toFixed(2)}</h2>
+            <button className="proceed-button" onClick={handleProceedToOrder}>
+                Proceed to Order Confirmation
+            </button>
         </div>
     );
 };
